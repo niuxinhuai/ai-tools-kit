@@ -1,0 +1,32 @@
+{
+  "name": "ai-tools-kit",
+  "version": "0.1.0",
+  "description": "A bilingual web app and CLI collection of practical AI tools with pluggable providers.",
+  "type": "module",
+  "bin": {
+    "ai-tools": "./bin/ai-tools.js"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "cli": "node bin/ai-tools.js",
+    "test": "node tests/smoke.test.js",
+    "check": "node --check server/index.js && node --check bin/ai-tools.js && node --check src/providers.js && node --check src/run.js && node --check src/tools.js"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "web-app",
+    "openai",
+    "deepseek",
+    "gemini",
+    "anthropic",
+    "ollama",
+    "bilingual"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}

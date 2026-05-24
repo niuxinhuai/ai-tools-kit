@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Tools Kit</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">AI</div>
+          <div>
+            <h1>AI Tools Kit</h1>
+            <p>Web + CLI bilingual AI tools</p>
+          </div>
+        </div>
+
+        <div class="search-wrap">
+          <input id="searchInput" type="search" placeholder="搜索工具 / Search tools" autocomplete="off" />
+        </div>
+
+        <nav id="toolList" class="tool-list" aria-label="AI tools"></nav>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p id="toolCategory" class="category">Writing</p>
+            <h2 id="toolTitle">AI Tool</h2>
+          </div>
+          <div class="status">
+            <span id="providerBadge">mock</span>
+            <button id="copyButton" type="button" title="Copy result">Copy</button>
+          </div>
+        </header>
+
+        <section class="config-panel" aria-label="Run settings">
+          <label>
+            Language
+            <select id="languageSelect"></select>
+          </label>
+          <label>
+            Mode
+            <select id="optionSelect"></select>
+          </label>
+          <label>
+            Provider
+            <select id="providerSelect"></select>
+          </label>
+          <label>
+            Model
+            <input id="modelInput" type="text" placeholder="Use provider default" />
+          </label>
+        </section>
+
+        <section class="editor-grid">
+          <div class="panel input-panel">
+            <div class="panel-head">
+              <label id="inputLabel" for="inputText">Input</label>
+              <button id="sampleButton" type="button">Sample</button>
+            </div>
+            <textarea id="inputText" spellcheck="false"></textarea>
+            <div class="actions">
+              <span id="charCount">0 chars</span>
+              <button id="runButton" type="button">Run Tool</button>
+            </div>
+          </div>
+
+          <div class="panel output-panel">
+            <div class="panel-head">
+              <span>Output</span>
+              <span id="runMeta">Ready</span>
+            </div>
+            <pre id="outputText">Choose a tool, paste your input, then run it.</pre>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
