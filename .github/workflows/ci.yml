@@ -22,4 +22,13 @@ jobs:
         run: npm run check
 
       - name: Smoke test
-        run: npm test
+        run: npm run test:smoke
+
+      - name: CLI test
+        run: npm run test:cli
+
+      - name: API test
+        run: npm run test:api
+
+      - name: Package dry run
+        run: npm run test:package

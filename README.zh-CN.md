@@ -1,31 +1,10 @@
 # AI Tools Kit
 
-一个实用的中英文 AI 小工具集合，同时支持网页应用和命令行 CLI。适合日常高频任务：文案改写、文件总结、Prompt 生成、代码解释、翻译、社媒帖子、周报生成和创意发散。
+一个中英文 AI 工具箱，适合日常写作、代码解释、总结、翻译、工作流和本地自动化。它同时支持网页应用和命令行 CLI，Provider 可插拔，运行时零依赖。
 
 English docs: [README.md](./README.md).
 
-## 功能亮点
-
-- 网页端 + CLI 一套项目。
-- 支持中文、英文、中英双语输出。
-- Web 和 CLI 共用同一套工具定义。
-- 支持 OpenAI、OpenAI 兼容接口、DeepSeek、通义千问、豆包、Moonshot、Gemini、Anthropic、Ollama 和本地 Mock 模式。
-- 网页端支持 OpenAI 兼容接口和 Ollama 的流式输出。
-- 支持文本文件导入、结果导出和浏览器本地历史记录。
-- CLI 支持多文件批量处理。
-- 支持通过 `tools/custom.json` 增加自定义工具。
-- 支持网页端和 `ai-tools --doctor` Provider 配置诊断。
-- 支持网页端和 CLI 预览最终 Prompt。
-- 提供本地 HTTP API，方便自动化脚本调用。
-- 支持自托管场景下的可选 API Token 鉴权。
-- 补齐 npm 发布元数据和 GitHub Issue / PR 模板。
-- CLI 支持显式开启本地缓存，减少重复调用。
-- 网页历史记录支持搜索、筛选、单条导出、删除、复制和重跑。
-- 增加自定义工具模板库和 OpenAPI 规范。
-- 支持线性工作流、Provider fallback、多文件合并输入和长文本分块。
-- 零运行依赖，不需要构建步骤。
-
-## 快速开始
+## 3 分钟上手
 
 ```bash
 git clone https://github.com/niuxinhuai/ai-tools-kit.git
@@ -34,37 +13,29 @@ cp .env.example .env
 npm start
 ```
 
-打开 <http://localhost:5177>。
+打开 <http://localhost:5177>。如果暂时没有模型密钥，可以用 `AI_PROVIDER=mock` 体验全部流程。
 
-如果暂时没有模型密钥，可以在 `.env` 中使用本地演示模式：
-
-```bash
-AI_PROVIDER=mock
-```
-
-## CLI 用法
+## 常用命令
 
 ```bash
 npm run cli -- --list
 npm run cli -- --tool rewrite --input "帮我把这句话改自然一点。" --lang zh --provider mock
-cat notes.md | npm run cli -- --tool summarize --option structured --lang zh
 npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
+npm run cli -- --workflow workflows/content-pipeline.json --file notes.md --provider mock
 npm run cli -- --doctor --provider deepseek
-npm run cli -- --test-provider --provider mock
 npm run cli -- --init --yes --with-api-token
-npm run cli -- --validate-tools
-npm run cli -- --tool rewrite --input "帮我改写" --print-prompt
 AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
-ai-tools --workflow workflows/content-pipeline.json --file notes.md
-ai-tools --tool summarize --files "docs/*.md" --merge-files --chunk-size 8000
 ```
 
-如果全局安装或本地 link：
+## 核心能力
 
-```bash
-npm link
-ai-tools --tool code-explain --file ./snippet.js --lang bilingual
-```
+- 网页端 + CLI 一套零依赖 Node 项目。
+- 内置文案改写、文件总结、Prompt 生成、代码解释、周报、翻译、社媒帖子、创意发散。
+- 支持 OpenAI、OpenAI 兼容接口、DeepSeek、通义千问、豆包、Moonshot、Gemini、Anthropic、Ollama 和 mock 模式。
+- 网页端支持流式输出、文件导入、结果导出、Prompt 预览和增强历史记录。
+- CLI 支持批量处理、多文件合并、长文本分块、本地缓存、工作流和 Provider fallback。
+- 支持通过 `tools/custom.json` 增加自定义工具，并提供 `tools/templates/` 模板库。
+- 提供本地 HTTP API、OpenAPI 规范、可选 API Token 鉴权、Docker 支持和 npm 发布配置。
 
 ## 内置工具
 
@@ -79,11 +50,9 @@ ai-tools --tool code-explain --file ./snippet.js --lang bilingual
 | `social-post` | 社媒帖子生成器 |
 | `idea-lab` | 创意发散器 |
 
-## Provider 配置
+## 配置
 
-见 [docs/PROVIDERS.zh-CN.md](./docs/PROVIDERS.zh-CN.md)。
-
-OpenAI 兼容接口示例：
+复制 `.env.example` 并选择 Provider：
 
 ```bash
 AI_PROVIDER=openai-compatible
@@ -92,7 +61,7 @@ OPENAI_API_KEY=your_key
 AI_MODEL=gpt-4o-mini
 ```
 
-Ollama 本地模型示例：
+Ollama 示例：
 
 ```bash
 AI_PROVIDER=ollama
@@ -100,62 +69,25 @@ OLLAMA_BASE_URL=http://localhost:11434
 AI_MODEL=llama3.1
 ```
 
-## 部署
+## 进阶文档
 
-见 [docs/DEPLOYMENT.zh-CN.md](./docs/DEPLOYMENT.zh-CN.md)。
+- Provider：[docs/PROVIDERS.zh-CN.md](./docs/PROVIDERS.zh-CN.md)
+- 自定义工具：[docs/CUSTOM_TOOLS.zh-CN.md](./docs/CUSTOM_TOOLS.zh-CN.md)
+- 工作流：[docs/WORKFLOWS.zh-CN.md](./docs/WORKFLOWS.zh-CN.md)
+- API：[docs/API.zh-CN.md](./docs/API.zh-CN.md)
+- OpenAPI：[openapi.json](./openapi.json)
+- 部署：[docs/DEPLOYMENT.zh-CN.md](./docs/DEPLOYMENT.zh-CN.md)
+- 安全：[docs/SECURITY.zh-CN.md](./docs/SECURITY.zh-CN.md)
+- 变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
-Docker 快速启动：
-
-```bash
-cp .env.example .env
-docker compose up --build
-```
-
-## 自定义工具
-
-见 [docs/CUSTOM_TOOLS.zh-CN.md](./docs/CUSTOM_TOOLS.zh-CN.md)。
+## 脚本
 
 ```bash
-mkdir -p tools
-cp tools/custom.example.json tools/custom.json
-npm start
-```
-
-模板示例在 `tools/templates/` 目录。
-
-## 工作流
-
-工作流示例在 `workflows/` 目录。详见 [docs/WORKFLOWS.zh-CN.md](./docs/WORKFLOWS.zh-CN.md)。
-
-```bash
-ai-tools --workflow workflows/content-pipeline.json --file notes.md
-```
-
-## API 与安全
-
-- API 文档：[docs/API.zh-CN.md](./docs/API.zh-CN.md)
-- OpenAPI 规范：[openapi.json](./openapi.json)
-- 安全说明：[docs/SECURITY.zh-CN.md](./docs/SECURITY.zh-CN.md)
-
-## 项目结构
-
-```text
-ai-tools-kit/
-  bin/              CLI 入口
-  docs/             Provider 配置说明
-  public/           网页应用
-  server/           静态服务与 API
-  src/              工具定义、Provider 适配、运行逻辑
-  tests/            冒烟测试
-```
-
-## 常用脚本
-
-```bash
-npm start       # 启动网页端和 API server
-npm run cli     # 运行 CLI
-npm test        # Mock 模式冒烟测试
-npm run check   # 语法检查
+npm start          # 启动网页端和 API server
+npm run cli        # 运行 CLI
+npm run check      # 语法检查
+npm test           # smoke + CLI + API + package 测试
+npm run test:api   # API 接口测试
 ```
 
 ## 开源协议

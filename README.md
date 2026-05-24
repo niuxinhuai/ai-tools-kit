@@ -1,31 +1,10 @@
 # AI Tools Kit
 
-A practical bilingual AI toolbox that works as both a web app and a CLI. It is designed for small daily AI tasks: rewriting, summarizing, prompt building, code explanation, translation, social posts, weekly reports, and idea generation.
+A bilingual AI toolbox for daily writing, coding, summarizing, translation, workflows, and local automation. It runs as both a web app and a CLI, with pluggable providers and no runtime dependencies.
 
 中文文档见 [README.zh-CN.md](./README.zh-CN.md).
 
-## Features
-
-- Web app and CLI in one zero-dependency Node project.
-- Chinese, English, and bilingual output modes.
-- Shared tool definitions for web and CLI.
-- Provider support for OpenAI, OpenAI-compatible APIs, DeepSeek, Qwen, Doubao, Moonshot, Gemini, Anthropic, Ollama, and local mock mode.
-- Streaming output in the web app for OpenAI-compatible providers and Ollama.
-- Text file import, result export, and local browser history for recent runs.
-- Batch CLI processing for multiple files.
-- Custom tools through `tools/custom.json`.
-- Provider diagnostics through the web app and `ai-tools --doctor`.
-- Prompt preview in the web app and CLI.
-- Local HTTP API for automation and scripting.
-- Optional API token protection for self-hosted deployments.
-- npm publish metadata and GitHub issue/PR templates.
-- Opt-in CLI cache for repeated prompts.
-- Enhanced web history search, filtering, item export, delete, copy, and rerun.
-- Custom tool template library and OpenAPI spec.
-- Linear workflow pipelines, provider fallback, merged multi-file input, and long-input chunking.
-- No build step required.
-
-## Quick Start
+## 3-Minute Start
 
 ```bash
 git clone https://github.com/niuxinhuai/ai-tools-kit.git
@@ -34,39 +13,31 @@ cp .env.example .env
 npm start
 ```
 
-Open <http://localhost:5177>.
+Open <http://localhost:5177>. Use `AI_PROVIDER=mock` when you want to try everything without an API key.
 
-The default sample config can run in `mock` mode if you set:
-
-```bash
-AI_PROVIDER=mock
-```
-
-## CLI Usage
+## Common Commands
 
 ```bash
 npm run cli -- --list
 npm run cli -- --tool rewrite --input "Make this sentence better." --lang en --provider mock
-cat notes.md | npm run cli -- --tool summarize --option structured --lang zh
 npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
+npm run cli -- --workflow workflows/content-pipeline.json --file notes.md --provider mock
 npm run cli -- --doctor --provider deepseek
-npm run cli -- --test-provider --provider mock
 npm run cli -- --init --yes --with-api-token
-npm run cli -- --validate-tools
-npm run cli -- --tool rewrite --input "Draft this" --print-prompt
 AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
-ai-tools --workflow workflows/content-pipeline.json --file notes.md
-ai-tools --tool summarize --files "docs/*.md" --merge-files --chunk-size 8000
 ```
 
-If installed globally or linked locally:
+## Core Capabilities
 
-```bash
-npm link
-ai-tools --tool code-explain --file ./snippet.js --lang bilingual
-```
+- Web app and CLI in one zero-dependency Node project.
+- Built-in tools for rewriting, summarizing, prompt building, code explanation, reports, translation, social posts, and ideation.
+- Provider support for OpenAI, OpenAI-compatible APIs, DeepSeek, Qwen, Doubao, Moonshot, Gemini, Anthropic, Ollama, and mock mode.
+- Streaming web output, file import, result export, prompt preview, and enhanced local history.
+- Batch CLI, merged multi-file input, long-input chunking, local cache, workflows, and provider fallback.
+- Custom tools through `tools/custom.json`, with reusable templates in `tools/templates/`.
+- Local HTTP API, OpenAPI spec, optional API token protection, Docker support, and npm publishing metadata.
 
-## Built-in Tools
+## Built-In Tools
 
 | ID | Tool |
 | --- | --- |
@@ -79,11 +50,9 @@ ai-tools --tool code-explain --file ./snippet.js --lang bilingual
 | `social-post` | Social Post Maker |
 | `idea-lab` | Idea Lab |
 
-## Provider Setup
+## Configuration
 
-See [docs/PROVIDERS.md](./docs/PROVIDERS.md).
-
-Basic OpenAI-compatible setup:
+Copy `.env.example` and choose a provider:
 
 ```bash
 AI_PROVIDER=openai-compatible
@@ -92,7 +61,7 @@ OPENAI_API_KEY=your_key
 AI_MODEL=gpt-4o-mini
 ```
 
-Ollama local setup:
+Ollama example:
 
 ```bash
 AI_PROVIDER=ollama
@@ -100,62 +69,25 @@ OLLAMA_BASE_URL=http://localhost:11434
 AI_MODEL=llama3.1
 ```
 
-## Deployment
+## Advanced Docs
 
-See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
-
-Docker quick start:
-
-```bash
-cp .env.example .env
-docker compose up --build
-```
-
-## Custom Tools
-
-See [docs/CUSTOM_TOOLS.md](./docs/CUSTOM_TOOLS.md).
-
-```bash
-mkdir -p tools
-cp tools/custom.example.json tools/custom.json
-npm start
-```
-
-Template examples are available in `tools/templates/`.
-
-## Workflows
-
-Workflow examples are available in `workflows/`. See [docs/WORKFLOWS.md](./docs/WORKFLOWS.md).
-
-```bash
-ai-tools --workflow workflows/content-pipeline.json --file notes.md
-```
-
-## API and Security
-
-- API docs: [docs/API.md](./docs/API.md)
-- OpenAPI spec: [openapi.json](./openapi.json)
-- Security notes: [docs/SECURITY.md](./docs/SECURITY.md)
-
-## Project Structure
-
-```text
-ai-tools-kit/
-  bin/              CLI entry
-  docs/             Provider docs
-  public/           Web app
-  server/           Static server and API endpoint
-  src/              Shared tools, provider adapters, runtime
-  tests/            Smoke tests
-```
+- Providers: [docs/PROVIDERS.md](./docs/PROVIDERS.md)
+- Custom tools: [docs/CUSTOM_TOOLS.md](./docs/CUSTOM_TOOLS.md)
+- Workflows: [docs/WORKFLOWS.md](./docs/WORKFLOWS.md)
+- API: [docs/API.md](./docs/API.md)
+- OpenAPI: [openapi.json](./openapi.json)
+- Deployment: [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
+- Security: [docs/SECURITY.md](./docs/SECURITY.md)
+- Changelog: [CHANGELOG.md](./CHANGELOG.md)
 
 ## Scripts
 
 ```bash
-npm start       # run web app and API server
-npm run cli     # run CLI
-npm test        # mock-mode smoke test
-npm run check   # syntax checks
+npm start          # run web app and API server
+npm run cli        # run CLI
+npm run check      # syntax checks
+npm test           # smoke + CLI + API + package tests
+npm run test:api   # API endpoint tests
 ```
 
 ## License

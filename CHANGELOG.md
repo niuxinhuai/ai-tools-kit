@@ -2,6 +2,12 @@
 
 ## 2026-05-24
 
+### test: Strengthen CI and README
+
+- Added dedicated CLI, API, and package dry-run tests.
+- Updated CI to run smoke, CLI, API, and package checks separately.
+- Reworked README files around quick start, common commands, core capabilities, and advanced docs.
+
 ### feat: Add workflows, fallback, and long-input handling
 
 - Added linear workflow execution through `--workflow`.
