@@ -10,6 +10,7 @@ COPY server ./server
 COPY src ./src
 COPY tests ./tests
 COPY tools ./tools
+COPY workflows ./workflows
 COPY openapi.json ./
 COPY README.md README.zh-CN.md LICENSE ./
 

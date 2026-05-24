@@ -53,3 +53,18 @@ AI_MODEL=llama3.1
 ## 新增 Provider
 
 在 `src/providers.js` 中增加默认配置。如果新 Provider 不是 OpenAI 兼容接口，再补一个请求函数即可；网页端和 CLI 会自动复用。
+
+## Fallback Provider
+
+如果主 Provider 失败，可以设置备用 Provider：
+
+```bash
+AI_PROVIDER=deepseek
+AI_FALLBACK_PROVIDERS=openai,ollama
+```
+
+CLI 覆盖：
+
+```bash
+ai-tools --tool rewrite --input "hello" --provider deepseek --fallback-providers mock
+```

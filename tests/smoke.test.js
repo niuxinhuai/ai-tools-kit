@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { cacheKey } from "../src/cache.js";
 import { expandFilePatterns, formatResult } from "../src/files.js";
-import { runTool, streamTool } from "../src/run.js";
+import { runChunkedTool, runTool, runWorkflow, streamTool } from "../src/run.js";
 import { buildToolPrompt, tools, validateCustomTools } from "../src/tools.js";
 import { listProviders } from "../src/providers.js";
 
@@ -22,6 +22,15 @@ const result = await runTool({
 assert.equal(result.toolId, "summarize");
 assert.equal(result.provider.name, "mock");
 assert.match(result.output, /Mock provider/);
+const fallbackResult = await runTool({
+  toolId: "rewrite",
+  input: "fallback",
+  language: "en",
+  provider: { provider: "openai-compatible", baseUrl: "http://127.0.0.1:1", apiKey: "x", model: "bad-model" },
+  fallbackProviders: "mock"
+});
+assert.equal(fallbackResult.provider.name, "mock");
+assert.equal(fallbackResult.fallbackUsed, true);
 
 const chunks = [];
 for await (const event of streamTool({
@@ -57,5 +66,24 @@ assert.equal(validateCustomTools("tools/templates/developer-tools.json").ok, tru
 const openApi = JSON.parse(await fs.readFile("openapi.json", "utf8"));
 assert.equal(openApi.openapi, "3.1.0");
 assert.equal(cacheKey({ toolId: "rewrite" }).length, 64);
+const chunked = await runChunkedTool({
+  toolId: "summarize",
+  input: "abcdefg".repeat(200),
+  language: "en",
+  provider: { provider: "mock" },
+  chunkSize: 100,
+  chunkOverlap: 10
+});
+assert.ok(chunked.chunks > 1);
+const workflow = await runWorkflow({
+  steps: [
+    { toolId: "summarize", option: "brief" },
+    { toolId: "rewrite", option: "polish" }
+  ],
+  input: "workflow smoke test",
+  language: "en",
+  provider: { provider: "mock" }
+});
+assert.equal(workflow.steps.length, 2);
 
 console.log("Smoke tests passed.");

@@ -1,0 +1,23 @@
+{
+  "name": "Content Pipeline",
+  "language": "zh",
+  "provider": "mock",
+  "steps": [
+    {
+      "name": "Summarize source material",
+      "toolId": "summarize",
+      "option": "structured"
+    },
+    {
+      "name": "Create social post",
+      "toolId": "social-post",
+      "option": "twitter"
+    },
+    {
+      "name": "Translate bilingual version",
+      "toolId": "translate",
+      "option": "natural",
+      "language": "bilingual"
+    }
+  ]
+}

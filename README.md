@@ -22,6 +22,7 @@ A practical bilingual AI toolbox that works as both a web app and a CLI. It is d
 - Opt-in CLI cache for repeated prompts.
 - Enhanced web history search, filtering, item export, delete, copy, and rerun.
 - Custom tool template library and OpenAPI spec.
+- Linear workflow pipelines, provider fallback, merged multi-file input, and long-input chunking.
 - No build step required.
 
 ## Quick Start
@@ -54,6 +55,8 @@ npm run cli -- --init --yes --with-api-token
 npm run cli -- --validate-tools
 npm run cli -- --tool rewrite --input "Draft this" --print-prompt
 AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
+ai-tools --workflow workflows/content-pipeline.json --file notes.md
+ai-tools --tool summarize --files "docs/*.md" --merge-files --chunk-size 8000
 ```
 
 If installed globally or linked locally:
@@ -119,6 +122,14 @@ npm start
 ```
 
 Template examples are available in `tools/templates/`.
+
+## Workflows
+
+Workflow examples are available in `workflows/`. See [docs/WORKFLOWS.md](./docs/WORKFLOWS.md).
+
+```bash
+ai-tools --workflow workflows/content-pipeline.json --file notes.md
+```
 
 ## API and Security
 

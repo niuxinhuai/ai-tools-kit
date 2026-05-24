@@ -2,6 +2,13 @@
 
 ## 2026-05-24
 
+### feat: Add workflows, fallback, and long-input handling
+
+- Added linear workflow execution through `--workflow`.
+- Added provider fallback through `--fallback-providers` and `AI_FALLBACK_PROVIDERS`.
+- Added merged multi-file input with `--merge-files`.
+- Added long-input chunking with `--chunk-size` and synthesis.
+
 ### feat: Add cache, history controls, templates, and OpenAPI
 
 - Added opt-in CLI cache with `--cache`, `--cache-file`, and `--clear-cache`.

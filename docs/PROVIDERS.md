@@ -53,3 +53,18 @@ AI_MODEL=llama3.1
 ## Adding a Provider
 
 Add a default entry in `src/providers.js`, then implement a request function when the provider is not OpenAI-compatible. The rest of the app and CLI will pick it up automatically.
+
+## Fallback Providers
+
+Use fallback providers when you want a backup model if the primary provider fails:
+
+```bash
+AI_PROVIDER=deepseek
+AI_FALLBACK_PROVIDERS=openai,ollama
+```
+
+CLI override:
+
+```bash
+ai-tools --tool rewrite --input "hello" --provider deepseek --fallback-providers mock
+```

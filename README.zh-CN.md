@@ -22,6 +22,7 @@ English docs: [README.md](./README.md).
 - CLI 支持显式开启本地缓存，减少重复调用。
 - 网页历史记录支持搜索、筛选、单条导出、删除、复制和重跑。
 - 增加自定义工具模板库和 OpenAPI 规范。
+- 支持线性工作流、Provider fallback、多文件合并输入和长文本分块。
 - 零运行依赖，不需要构建步骤。
 
 ## 快速开始
@@ -54,6 +55,8 @@ npm run cli -- --init --yes --with-api-token
 npm run cli -- --validate-tools
 npm run cli -- --tool rewrite --input "帮我改写" --print-prompt
 AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
+ai-tools --workflow workflows/content-pipeline.json --file notes.md
+ai-tools --tool summarize --files "docs/*.md" --merge-files --chunk-size 8000
 ```
 
 如果全局安装或本地 link：
@@ -119,6 +122,14 @@ npm start
 ```
 
 模板示例在 `tools/templates/` 目录。
+
+## 工作流
+
+工作流示例在 `workflows/` 目录。详见 [docs/WORKFLOWS.zh-CN.md](./docs/WORKFLOWS.zh-CN.md)。
+
+```bash
+ai-tools --workflow workflows/content-pipeline.json --file notes.md
+```
 
 ## API 与安全
 

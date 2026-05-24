@@ -7,7 +7,7 @@ import readline from "node:readline/promises";
 import { cacheKey, clearCache, defaultCachePath, readCache, shouldUseCache, writeCache } from "../src/cache.js";
 import { loadEnv } from "../src/env.js";
 import { expandFilePatterns, formatResult, outputFileName } from "../src/files.js";
-import { runTool } from "../src/run.js";
+import { runChunkedTool, runTool, runWorkflow } from "../src/run.js";
 import { buildToolPrompt, tools, validateCustomTools } from "../src/tools.js";
 import { diagnoseProvider, listProviders } from "../src/providers.js";
 
@@ -73,6 +73,16 @@ if (args.validateTools) {
 }
 
 try {
+  if (args.workflow) {
+    const result = await runWorkflowCommand(args);
+    if (args.json) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.log(result.output);
+    }
+    process.exit(0);
+  }
+
   if (args.printPrompt) {
     const input = await resolveInput(args);
     console.log(buildToolPrompt({
@@ -85,24 +95,27 @@ try {
   }
 
   if (args.files) {
+    if (args.mergeFiles) {
+      const input = await resolveInput(args);
+      const result = await runToolMaybeCached(buildRunPayload(args, input, args.tool || "summarize"), args);
+      if (args.out) {
+        await fs.mkdir(args.out, { recursive: true });
+        const outputPath = path.join(args.out, `merged.${args.format === "txt" ? "txt" : args.format === "json" ? "json" : "md"}`);
+        await fs.writeFile(outputPath, formatResult({ file: "merged", ...result }, args.format || "md"), "utf8");
+        console.error(`Wrote ${outputPath}`);
+      } else if (args.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(result.output);
+      }
+      process.exit(0);
+    }
     const summary = await runBatch(args);
     process.exit(summary.failed ? 1 : 0);
   }
 
   const input = await resolveInput(args);
-  const result = await runToolMaybeCached({
-    toolId: args.tool || "rewrite",
-    input,
-    option: args.option,
-    language: args.lang || args.language || "zh",
-    provider: {
-      provider: args.provider,
-      model: args.model,
-      baseUrl: args.baseUrl,
-      apiKey: args.apiKey
-    },
-    temperature: args.temperature
-  }, args);
+  const result = await runToolMaybeCached(buildRunPayload(args, input, args.tool || "rewrite"), args);
 
   if (args.json) {
     console.log(JSON.stringify(result, null, 2));
@@ -112,6 +125,34 @@ try {
 } catch (error) {
   console.error(`Error: ${error.message}`);
   process.exit(1);
+}
+
+async function runWorkflowCommand(options) {
+  const workflowPath = path.resolve(options.workflow);
+  const workflow = JSON.parse(await fs.readFile(workflowPath, "utf8"));
+  const input = await resolveInput(options);
+  const result = await runWorkflow({
+    steps: workflow.steps,
+    input,
+    provider: {
+      provider: options.provider || workflow.provider,
+      model: options.model || workflow.model,
+      baseUrl: options.baseUrl || workflow.baseUrl,
+      apiKey: options.apiKey
+    },
+    language: options.lang || options.language || workflow.language || "zh",
+    temperature: options.temperature ?? workflow.temperature,
+    fallbackProviders: options.fallbackProviders || workflow.fallbackProviders
+  });
+
+  if (options.out) {
+    await fs.mkdir(options.out, { recursive: true });
+    const outputPath = path.join(options.out, `${path.parse(workflowPath).name}.md`);
+    await fs.writeFile(outputPath, workflowMarkdown(workflow, result), "utf8");
+    console.error(`Wrote ${outputPath}`);
+  }
+
+  return result;
 }
 
 async function initEnv(options) {
@@ -159,19 +200,13 @@ async function initEnv(options) {
 }
 
 async function testProvider(options) {
-  const result = await runTool({
-    toolId: "rewrite",
-    input: "Provider connectivity test.",
+  const result = await runTool(buildRunPayload({
+    ...options,
+    tool: "rewrite",
     option: "shorten",
-    language: "en",
-    provider: {
-      provider: options.provider,
-      model: options.model,
-      baseUrl: options.baseUrl,
-      apiKey: options.apiKey
-    },
+    lang: "en",
     temperature: 0
-  });
+  }, "Provider connectivity test.", "rewrite"));
   console.log(JSON.stringify({
     ok: true,
     provider: result.provider,
@@ -196,19 +231,7 @@ async function runBatch(options) {
   for (const file of files) {
     try {
       const input = await fs.readFile(file, "utf8");
-      const result = await runToolMaybeCached({
-        toolId: options.tool || "summarize",
-        input,
-        option: options.option,
-        language: options.lang || options.language || "zh",
-        provider: {
-          provider: options.provider,
-          model: options.model,
-          baseUrl: options.baseUrl,
-          apiKey: options.apiKey
-        },
-        temperature: options.temperature
-      }, options);
+      const result = await runToolMaybeCached(buildRunPayload(options, input, options.tool || "summarize"), options);
       results.push({ file, ...result });
 
       if (options.out) {
@@ -260,7 +283,10 @@ async function runToolMaybeCached(payload, options) {
     provider: payload.provider?.provider,
     model: payload.provider?.model,
     baseUrl: payload.provider?.baseUrl,
-    temperature: payload.temperature
+    temperature: payload.temperature,
+    fallbackProviders: payload.fallbackProviders,
+    chunkSize: options.chunkSize,
+    chunkOverlap: options.chunkOverlap
   });
 
   if (cache[key]) {
@@ -268,7 +294,13 @@ async function runToolMaybeCached(payload, options) {
     return cache[key].result;
   }
 
-  const result = await runTool(payload);
+  const result = options.chunkSize
+    ? await runChunkedTool({
+      ...payload,
+      chunkSize: options.chunkSize,
+      chunkOverlap: options.chunkOverlap
+    })
+    : await runTool(payload);
   cache[key] = {
     createdAt: new Date().toISOString(),
     result
@@ -279,6 +311,17 @@ async function runToolMaybeCached(payload, options) {
 }
 
 async function resolveInput(options) {
+  if (options.files && options.mergeFiles) {
+    const files = await expandFilePatterns(flattenValues(options.files));
+    if (!files.length) {
+      throw new Error(`No files matched: ${flattenValues(options.files).join(", ")}`);
+    }
+    const parts = [];
+    for (const file of files) {
+      parts.push(`## File: ${file}\n\n${await fs.readFile(file, "utf8")}`);
+    }
+    return parts.join("\n\n---\n\n");
+  }
   if (options.file) {
     return fs.readFile(options.file, "utf8");
   }
@@ -293,6 +336,44 @@ async function resolveInput(options) {
     return Buffer.concat(chunks).toString("utf8");
   }
   throw new Error("Provide --input, --file, or pipe text through stdin.");
+}
+
+function buildRunPayload(options, input, defaultTool) {
+  return {
+    toolId: options.tool || defaultTool,
+    input,
+    option: options.option,
+    language: options.lang || options.language || "zh",
+    provider: {
+      provider: options.provider,
+      model: options.model,
+      baseUrl: options.baseUrl,
+      apiKey: options.apiKey
+    },
+    temperature: options.temperature,
+    fallbackProviders: options.fallbackProviders
+  };
+}
+
+function workflowMarkdown(workflow, result) {
+  return [
+    `# ${workflow.name || "AI Tools Workflow"}`,
+    "",
+    ...result.steps.flatMap((step) => [
+      `## ${step.index}. ${step.name}`,
+      "",
+      `- Tool: ${step.toolId}`,
+      `- Option: ${step.option}`,
+      `- Provider: ${step.provider.name}`,
+      "",
+      step.output,
+      ""
+    ]),
+    "## Final Output",
+    "",
+    result.output,
+    ""
+  ].join("\n");
 }
 
 function parseArgs(argv) {
@@ -371,6 +452,8 @@ Usage:
   cat notes.md | ai-tools --tool summarize --option structured --lang zh
   ai-tools --tool code-explain --file ./snippet.js --provider ollama --model llama3.1
   ai-tools --tool summarize --files "docs/*.md" --out summaries --format md
+  ai-tools --tool summarize --files "docs/*.md" --merge-files --chunk-size 8000
+  ai-tools --workflow workflows/content-pipeline.json --file notes.md
   AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
 
 Options:
@@ -379,6 +462,10 @@ Options:
   --input <text>       Inline input.
   --file <path>        Read input from file.
   --files <patterns>   Batch mode. Supports comma-separated patterns and simple * / ** globs.
+  --merge-files        Merge --files into one input instead of processing each file separately.
+  --chunk-size <chars> Split long input and synthesize the chunk results.
+  --chunk-overlap <chars>
+  --workflow <path>    Run a linear workflow JSON file.
   --out <dir>          Write batch results to a directory.
   --format <md|txt|json>
   --lang <zh|en|bilingual>
@@ -386,6 +473,7 @@ Options:
   --model <name>       Override model.
   --base-url <url>     Override provider base URL.
   --api-key <key>      Override provider API key.
+  --fallback-providers <names> Comma-separated providers to try if the primary provider fails.
   --temperature <num>  Defaults to 0.4.
   --init               Create a .env file. Use --yes for defaults and --force to overwrite.
   --env <path>         Env file path for --init. Defaults to .env.

@@ -112,6 +112,9 @@ export function diagnoseProvider(overrides = {}) {
 }
 
 export function resolveProvider(overrides = {}) {
+  if (overrides.name && overrides.type) {
+    return overrides;
+  }
   const name = normalizeProvider(overrides.provider || process.env.AI_PROVIDER || "mock");
   const defaults = providerDefaults[name] ?? providerDefaults.mock;
   const upperName = name.toUpperCase().replaceAll("-", "_");
