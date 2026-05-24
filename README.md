@@ -22,6 +22,7 @@ npm run cli -- --list
 npm run cli -- --tool rewrite --input "Make this sentence better." --lang en --provider mock
 npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
 npm run cli -- --tool email-reply --input "Thanks" --var audience=customer --var goal="confirm next step"
+npm run cli -- --init-config
 npm run cli -- --workflow workflows/content-pipeline.json --file notes.md --provider mock
 npm run cli -- --doctor --provider deepseek
 npm run cli -- --init --yes --with-api-token
@@ -35,6 +36,7 @@ AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
 - Provider support for OpenAI, OpenAI-compatible APIs, DeepSeek, Qwen, Doubao, Moonshot, Gemini, Anthropic, Ollama, and mock mode.
 - Streaming web output, file import, result export, prompt preview, and enhanced local history.
 - Batch CLI, merged multi-file input, long-input chunking, local cache, workflows, and provider fallback.
+- Project-level CLI defaults through `.ai-tools-kit.json`.
 - Custom tools through `tools/custom.json`, with reusable templates in `tools/templates/`.
 - Prompt variables for custom tools, with auto-generated web forms and CLI `--var` support.
 - Local HTTP API, OpenAPI spec, optional API token protection, Docker support, and npm publishing metadata.
@@ -75,6 +77,7 @@ AI_MODEL=llama3.1
 
 - Providers: [docs/PROVIDERS.md](./docs/PROVIDERS.md)
 - Custom tools: [docs/CUSTOM_TOOLS.md](./docs/CUSTOM_TOOLS.md)
+- Project config: [docs/CONFIG.md](./docs/CONFIG.md)
 - Workflows: [docs/WORKFLOWS.md](./docs/WORKFLOWS.md)
 - API: [docs/API.md](./docs/API.md)
 - OpenAPI: [openapi.json](./openapi.json)

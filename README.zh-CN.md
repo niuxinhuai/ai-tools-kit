@@ -22,6 +22,7 @@ npm run cli -- --list
 npm run cli -- --tool rewrite --input "帮我把这句话改自然一点。" --lang zh --provider mock
 npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
 npm run cli -- --tool email-reply --input "感谢更新" --var audience=customer --var goal="确认下一步"
+npm run cli -- --init-config
 npm run cli -- --workflow workflows/content-pipeline.json --file notes.md --provider mock
 npm run cli -- --doctor --provider deepseek
 npm run cli -- --init --yes --with-api-token
@@ -35,6 +36,7 @@ AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
 - 支持 OpenAI、OpenAI 兼容接口、DeepSeek、通义千问、豆包、Moonshot、Gemini、Anthropic、Ollama 和 mock 模式。
 - 网页端支持流式输出、文件导入、结果导出、Prompt 预览和增强历史记录。
 - CLI 支持批量处理、多文件合并、长文本分块、本地缓存、工作流和 Provider fallback。
+- 支持通过 `.ai-tools-kit.json` 保存项目级 CLI 默认配置。
 - 支持通过 `tools/custom.json` 增加自定义工具，并提供 `tools/templates/` 模板库。
 - 自定义工具支持 Prompt 变量，网页端自动生成表单，CLI 支持 `--var`。
 - 提供本地 HTTP API、OpenAPI 规范、可选 API Token 鉴权、Docker 支持和 npm 发布配置。
@@ -75,6 +77,7 @@ AI_MODEL=llama3.1
 
 - Provider：[docs/PROVIDERS.zh-CN.md](./docs/PROVIDERS.zh-CN.md)
 - 自定义工具：[docs/CUSTOM_TOOLS.zh-CN.md](./docs/CUSTOM_TOOLS.zh-CN.md)
+- 项目配置：[docs/CONFIG.zh-CN.md](./docs/CONFIG.zh-CN.md)
 - 工作流：[docs/WORKFLOWS.zh-CN.md](./docs/WORKFLOWS.zh-CN.md)
 - API：[docs/API.zh-CN.md](./docs/API.zh-CN.md)
 - OpenAPI：[openapi.json](./openapi.json)

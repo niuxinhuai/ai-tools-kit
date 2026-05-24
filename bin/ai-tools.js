@@ -5,6 +5,7 @@ import path from "node:path";
 import process from "node:process";
 import readline from "node:readline/promises";
 import { cacheKey, clearCache, defaultCachePath, readCache, shouldUseCache, writeCache } from "../src/cache.js";
+import { loadProjectConfig, mergeProjectConfig, projectConfigFileName, sampleProjectConfig, writeProjectConfig } from "../src/config.js";
 import { loadEnv } from "../src/env.js";
 import { expandFilePatterns, formatResult, outputFileName } from "../src/files.js";
 import { runChunkedTool, runTool, runWorkflow } from "../src/run.js";
@@ -12,11 +13,36 @@ import { buildToolPrompt, tools, validateCustomTools } from "../src/tools.js";
 import { diagnoseProvider, listProviders } from "../src/providers.js";
 
 loadEnv();
-const args = parseArgs(process.argv.slice(2));
+const rawArgs = parseArgs(process.argv.slice(2));
 
-if (args.help) {
+if (rawArgs.help) {
   printHelp();
   process.exit(0);
+}
+
+if (rawArgs.initConfig) {
+  try {
+    const configPath = rawArgs.config || projectConfigFileName;
+    const targetPath = await writeProjectConfig(configPath, sampleProjectConfig(), { force: Boolean(rawArgs.force) });
+    console.log(`Wrote ${targetPath}`);
+    process.exit(0);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+let args;
+try {
+  const projectConfig = await loadProjectConfig({
+    configPath: rawArgs.config === true ? undefined : rawArgs.config,
+    disabled: Boolean(rawArgs.noConfig)
+  });
+  args = mergeProjectConfig(rawArgs, projectConfig.config);
+  args.configPath = projectConfig.path;
+} catch (error) {
+  console.error(`Error: ${error.message}`);
+  process.exit(1);
 }
 
 if (args.list) {
@@ -90,7 +116,7 @@ try {
       input,
       option: args.option,
       language: args.lang || args.language || "zh",
-      variables: parseVariables(args.var)
+      variables: readVariables(args)
     }));
     process.exit(0);
   }
@@ -144,7 +170,7 @@ async function runWorkflowCommand(options) {
     language: options.lang || options.language || workflow.language || "zh",
     temperature: options.temperature ?? workflow.temperature,
     fallbackProviders: options.fallbackProviders || workflow.fallbackProviders,
-    variables: { ...(workflow.variables || {}), ...parseVariables(options.var) }
+    variables: { ...(workflow.variables || {}), ...readVariables(options) }
   });
 
   if (options.out) {
@@ -355,7 +381,7 @@ function buildRunPayload(options, input, defaultTool) {
     },
     temperature: options.temperature,
     fallbackProviders: options.fallbackProviders,
-    variables: parseVariables(options.var)
+    variables: readVariables(options)
   };
 }
 
@@ -430,6 +456,13 @@ function parseVariables(value) {
   }, {});
 }
 
+function readVariables(options) {
+  return {
+    ...(options.configVariables || {}),
+    ...parseVariables(options.var)
+  };
+}
+
 async function ask(rl, question, defaultValue) {
   if (!rl) {
     return defaultValue;
@@ -465,6 +498,7 @@ Usage:
   ai-tools --list
   ai-tools --providers
   ai-tools --init
+  ai-tools --init-config
   ai-tools --doctor --provider deepseek
   ai-tools --test-provider --provider mock
   ai-tools --validate-tools
@@ -491,6 +525,8 @@ Options:
   --out <dir>          Write batch results to a directory.
   --format <md|txt|json>
   --lang <zh|en|bilingual>
+  --config <path>      Read project defaults from a JSON file. Defaults to nearest .ai-tools-kit.json.
+  --no-config          Disable project config lookup.
   --provider <name>    openai, deepseek, qwen, doubao, moonshot, gemini, anthropic, ollama, mock.
   --model <name>       Override model.
   --base-url <url>     Override provider base URL.
@@ -499,6 +535,7 @@ Options:
   --var <key=value>    Set custom tool template variables. Can be repeated.
   --temperature <num>  Defaults to 0.4.
   --init               Create a .env file. Use --yes for defaults and --force to overwrite.
+  --init-config        Create a .ai-tools-kit.json project config file.
   --env <path>         Env file path for --init. Defaults to .env.
   --with-api-token     Generate AI_TOOLS_API_TOKEN during --init.
   --yes                Use defaults for --init.

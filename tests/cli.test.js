@@ -25,6 +25,8 @@ const sourceFile = path.join(tempDir, "note.md");
 const outDir = path.join(tempDir, "out");
 await fs.writeFile(sourceFile, "CLI batch test", "utf8");
 const customToolsFile = path.join(tempDir, "custom.json");
+const configDir = path.join(tempDir, "project");
+await fs.mkdir(configDir, { recursive: true });
 await fs.writeFile(customToolsFile, JSON.stringify({
   tools: [
     {
@@ -42,14 +44,34 @@ await fs.writeFile(customToolsFile, JSON.stringify({
   ]
 }), "utf8");
 
+const initConfig = await runCli(["--init-config"], {}, configDir);
+assert.match(initConfig.stdout, /Wrote/);
+assert.match(await fs.readFile(path.join(configDir, ".ai-tools-kit.json"), "utf8"), /"provider": "mock"/);
+
+const projectConfigFile = path.join(configDir, ".ai-tools-kit.json");
+await fs.writeFile(projectConfigFile, JSON.stringify({
+  tool: "summarize",
+  option: "brief",
+  language: "en",
+  provider: "mock",
+  variables: {
+    audience: "operators",
+    tone: "focused"
+  }
+}), "utf8");
+
+const configPrompt = await runCli(["--input", "Config note", "--print-prompt"], {}, configDir);
+assert.match(configPrompt.stdout, /Summarize the content with mode "brief"/);
+
+const overridePrompt = await runCli(["--tool", "rewrite", "--input", "Config note", "--print-prompt"], {}, configDir);
+assert.match(overridePrompt.stdout, /Rewrite the following content/);
+
 const variablePrompt = await runCli([
   "--tool", "variable-test",
   "--input", "Launch note",
-  "--print-prompt",
-  "--var", "audience=developers",
-  "--var", "tone=warm"
-], { AI_TOOLS_CUSTOM_FILE: customToolsFile });
-assert.match(variablePrompt.stdout, /Write for developers in a warm tone/);
+  "--print-prompt"
+], { AI_TOOLS_CUSTOM_FILE: customToolsFile }, configDir);
+assert.match(variablePrompt.stdout, /Write for operators in a focused tone/);
 
 const batch = await runCli([
   "--tool", "summarize",
@@ -77,9 +99,9 @@ assert.match(workflow.stdout, /Mock provider/);
 
 console.log("CLI tests passed.");
 
-async function runCli(args, env = {}) {
+async function runCli(args, env = {}, cwd = process.cwd()) {
   return exec("node", [bin, ...args], {
-    cwd: process.cwd(),
+    cwd,
     env: {
       ...process.env,
       AI_PROVIDER: "mock",

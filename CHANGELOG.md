@@ -2,6 +2,12 @@
 
 ## 2026-05-24
 
+### feat: Add project-level CLI config
+
+- Added `.ai-tools-kit.json` discovery, `--config`, `--no-config`, and `--init-config`.
+- Project config can define default tool, provider, language, variables, cache, and batch options.
+- Added bilingual config docs and CLI tests for config lookup and overrides.
+
 ### feat: Add prompt variables for custom tools
 
 - Added custom tool `variables` metadata and template replacement for placeholders such as `{{audience}}`.
