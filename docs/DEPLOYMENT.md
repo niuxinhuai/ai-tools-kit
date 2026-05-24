@@ -40,6 +40,16 @@ npm start
 
 Set `PORT`, `AI_PROVIDER`, and your provider secrets in Railway variables.
 
+## API Token
+
+For public deployments, set:
+
+```bash
+AI_TOOLS_API_TOKEN=your_random_token
+```
+
+Users can enter this token in the web UI, and scripts can send it as a Bearer token.
+
 ## Vercel Note
 
 This repository currently uses a long-running Node server and streaming responses. For Vercel, either deploy it as a Docker-backed service elsewhere, or refactor `server/index.js` into Vercel serverless route handlers.

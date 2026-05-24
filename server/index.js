@@ -13,6 +13,7 @@ loadEnv(path.join(rootDir, ".env"));
 const publicDir = path.join(rootDir, "public");
 const port = Number(process.env.PORT || 5177);
 const startedAt = new Date().toISOString();
+const apiToken = process.env.AI_TOOLS_API_TOKEN || "";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -24,6 +25,12 @@ const mimeTypes = {
 
 const server = http.createServer(async (request, response) => {
   try {
+    if (isProtectedApiRequest(request) && !isAuthorized(request)) {
+      return sendJson(response, {
+        error: "Unauthorized. Set the Authorization header to Bearer <AI_TOOLS_API_TOKEN>."
+      }, 401);
+    }
+
     if (request.method === "GET" && request.url === "/api/meta") {
       return sendJson(response, {
         tools,
@@ -49,7 +56,8 @@ const server = http.createServer(async (request, response) => {
         },
         security: {
           apiKeysExposedToBrowser: false,
-          apiKeysSource: "server environment variables"
+          apiKeysSource: "server environment variables",
+          apiTokenEnabled: Boolean(apiToken)
         }
       });
     }
@@ -123,6 +131,22 @@ async function readBody(request) {
 function sendJson(response, body, status = 200) {
   response.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(body));
+}
+
+function isProtectedApiRequest(request) {
+  const url = new URL(request.url, `http://localhost:${port}`);
+  if (!url.pathname.startsWith("/api/")) {
+    return false;
+  }
+  return url.pathname !== "/api/health" && url.pathname !== "/api/meta";
+}
+
+function isAuthorized(request) {
+  if (!apiToken) {
+    return true;
+  }
+  const authorization = request.headers.authorization || "";
+  return authorization === `Bearer ${apiToken}`;
 }
 
 async function sendEventStream(response, events) {

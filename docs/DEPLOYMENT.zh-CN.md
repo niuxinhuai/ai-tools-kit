@@ -40,6 +40,16 @@ npm start
 
 在 Railway Variables 中配置 `PORT`、`AI_PROVIDER` 和 Provider 密钥。
 
+## API Token
+
+公开部署时建议设置：
+
+```bash
+AI_TOOLS_API_TOKEN=your_random_token
+```
+
+用户可以在网页端填写这个 token，脚本也可以通过 Bearer token 方式调用 API。
+
 ## Vercel 说明
 
 当前项目是长驻 Node 服务，并支持流式响应。若要部署到 Vercel，需要把 `server/index.js` 拆成 Vercel serverless route handlers；或者先用 Docker / Render / Railway 部署。

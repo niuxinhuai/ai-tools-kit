@@ -17,6 +17,8 @@ English docs: [README.md](./README.md).
 - 支持网页端和 `ai-tools --doctor` Provider 配置诊断。
 - 支持网页端和 CLI 预览最终 Prompt。
 - 提供本地 HTTP API，方便自动化脚本调用。
+- 支持自托管场景下的可选 API Token 鉴权。
+- 补齐 npm 发布元数据和 GitHub Issue / PR 模板。
 - 零运行依赖，不需要构建步骤。
 
 ## 快速开始
@@ -44,6 +46,8 @@ npm run cli -- --tool rewrite --input "帮我把这句话改自然一点。" --l
 cat notes.md | npm run cli -- --tool summarize --option structured --lang zh
 npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
 npm run cli -- --doctor --provider deepseek
+npm run cli -- --test-provider --provider mock
+npm run cli -- --init --yes --with-api-token
 npm run cli -- --validate-tools
 npm run cli -- --tool rewrite --input "帮我改写" --print-prompt
 ```

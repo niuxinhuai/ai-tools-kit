@@ -17,6 +17,8 @@ A practical bilingual AI toolbox that works as both a web app and a CLI. It is d
 - Provider diagnostics through the web app and `ai-tools --doctor`.
 - Prompt preview in the web app and CLI.
 - Local HTTP API for automation and scripting.
+- Optional API token protection for self-hosted deployments.
+- npm publish metadata and GitHub issue/PR templates.
 - No build step required.
 
 ## Quick Start
@@ -44,6 +46,8 @@ npm run cli -- --tool rewrite --input "Make this sentence better." --lang en --p
 cat notes.md | npm run cli -- --tool summarize --option structured --lang zh
 npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
 npm run cli -- --doctor --provider deepseek
+npm run cli -- --test-provider --provider mock
+npm run cli -- --init --yes --with-api-token
 npm run cli -- --validate-tools
 npm run cli -- --tool rewrite --input "Draft this" --print-prompt
 ```

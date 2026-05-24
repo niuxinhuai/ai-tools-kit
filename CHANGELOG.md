@@ -2,6 +2,15 @@
 
 ## 2026-05-24
 
+### feat: Prepare publishing and self-hosted protection
+
+- Added optional `AI_TOOLS_API_TOKEN` protection for provider-calling endpoints.
+- Added web API token input for protected deployments.
+- Added `ai-tools --init` to create `.env` files.
+- Added `ai-tools --test-provider` for provider connectivity checks.
+- Added npm publish metadata and package file whitelist.
+- Added GitHub issue and pull request templates.
+
 ### feat: Improve toolbox maturity
 
 - Added `/api/health` for runtime, provider, custom tool, and security diagnostics.

@@ -3,6 +3,19 @@
   "version": "0.1.0",
   "description": "A bilingual web app and CLI collection of practical AI tools with pluggable providers.",
   "type": "module",
+  "files": [
+    "bin",
+    "docs",
+    "public",
+    "server",
+    "src",
+    "tools/custom.example.json",
+    "README.md",
+    "README.zh-CN.md",
+    ".env.example",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "bin": {
     "ai-tools": "./bin/ai-tools.js"
   },
@@ -11,7 +24,8 @@
     "dev": "node server/index.js",
     "cli": "node bin/ai-tools.js",
     "test": "node tests/smoke.test.js",
-    "check": "node --check server/index.js && node --check bin/ai-tools.js && node --check src/env.js && node --check src/files.js && node --check src/providers.js && node --check src/run.js && node --check src/tools.js && node --check public/app.js"
+    "check": "node --check server/index.js && node --check bin/ai-tools.js && node --check src/env.js && node --check src/files.js && node --check src/providers.js && node --check src/run.js && node --check src/tools.js && node --check public/app.js",
+    "prepublishOnly": "npm run check && npm test"
   },
   "keywords": [
     "ai",
@@ -24,8 +38,19 @@
     "ollama",
     "bilingual"
   ],
-  "author": "",
+  "author": "niuxinhuai",
   "license": "MIT",
+  "homepage": "https://github.com/niuxinhuai/ai-tools-kit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/niuxinhuai/ai-tools-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/niuxinhuai/ai-tools-kit/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=20"
   }

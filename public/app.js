@@ -18,6 +18,7 @@ const ui = {
     mode: "模式",
     provider: "Provider",
     model: "模型",
+    apiToken: "API Token",
     modelPlaceholder: "使用 Provider 默认模型",
     copy: "复制",
     copied: "已复制",
@@ -48,6 +49,7 @@ const ui = {
     mode: "Mode",
     provider: "Provider",
     model: "Model",
+    apiToken: "API Token",
     modelPlaceholder: "Use provider default",
     copy: "Copy",
     copied: "Copied",
@@ -106,6 +108,7 @@ const elements = {
   providerSelect: document.querySelector("#providerSelect"),
   providerNotice: document.querySelector("#providerNotice"),
   modelInput: document.querySelector("#modelInput"),
+  apiTokenInput: document.querySelector("#apiTokenInput"),
   inputLabel: document.querySelector("#inputLabel"),
   inputText: document.querySelector("#inputText"),
   outputText: document.querySelector("#outputText"),
@@ -168,6 +171,9 @@ function bindEvents() {
   elements.exportButtons.forEach((button) => {
     button.addEventListener("click", () => exportOutput(button.dataset.export));
   });
+  elements.apiTokenInput.addEventListener("change", () => {
+    localStorage.setItem("ai-tools-api-token", elements.apiTokenInput.value.trim());
+  });
   elements.copyButton.addEventListener("click", async () => {
     await navigator.clipboard.writeText(elements.outputText.textContent);
     elements.copyButton.textContent = t("copied");
@@ -184,6 +190,8 @@ function applyLocale() {
   });
   elements.searchInput.placeholder = t("search");
   elements.modelInput.placeholder = t("modelPlaceholder");
+  elements.apiTokenInput.placeholder = "Bearer token";
+  elements.apiTokenInput.value = localStorage.getItem("ai-tools-api-token") || "";
   elements.copyButton.textContent = t("copy");
   elements.fileButton.textContent = t("import");
   elements.promptButton.textContent = t("prompt");
@@ -323,7 +331,7 @@ async function runActiveTool() {
 async function streamJsonEvents(url, payload, onEvent) {
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify(payload)
   });
   if (!response.ok || !response.body) {
@@ -372,7 +380,7 @@ async function previewPrompt() {
   try {
     const result = await fetchJson("/api/prompt", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({
         toolId: state.activeToolId,
         input,
@@ -513,12 +521,30 @@ function updateCharCount() {
 }
 
 async function fetchJson(url, options) {
-  const response = await fetch(url, options);
+  const response = await fetch(url, options ? {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...authHeader()
+    }
+  } : { headers: authHeader() });
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || response.statusText);
   }
   return data;
+}
+
+function authHeaders() {
+  return {
+    "Content-Type": "application/json",
+    ...authHeader()
+  };
+}
+
+function authHeader() {
+  const token = elements.apiTokenInput?.value?.trim() || localStorage.getItem("ai-tools-api-token") || "";
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 function renderIcon(name) {

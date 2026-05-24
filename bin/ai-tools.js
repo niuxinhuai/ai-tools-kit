@@ -1,7 +1,9 @@
 #!/usr/bin/env node
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import readline from "node:readline/promises";
 import { loadEnv } from "../src/env.js";
 import { expandFilePatterns, formatResult, outputFileName } from "../src/files.js";
 import { runTool } from "../src/run.js";
@@ -26,6 +28,16 @@ if (args.providers) {
   process.exit(0);
 }
 
+if (args.init) {
+  try {
+    await initEnv(args);
+    process.exit(0);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+}
+
 if (args.doctor) {
   const status = diagnoseProvider({
     provider: args.provider,
@@ -35,6 +47,16 @@ if (args.doctor) {
   });
   console.log(JSON.stringify(status, null, 2));
   process.exit(status.ok || status.level === "warning" ? 0 : 1);
+}
+
+if (args.testProvider) {
+  try {
+    await testProvider(args);
+    process.exit(0);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
 }
 
 if (args.validateTools) {
@@ -83,6 +105,71 @@ try {
 } catch (error) {
   console.error(`Error: ${error.message}`);
   process.exit(1);
+}
+
+async function initEnv(options) {
+  const envPath = path.resolve(options.env || ".env");
+  const exists = await fileExists(envPath);
+  if (exists && !options.force) {
+    throw new Error(`${envPath} already exists. Use --force to overwrite.`);
+  }
+
+  const interactive = process.stdin.isTTY && process.stdout.isTTY && !options.yes;
+  const answers = {};
+  let rl;
+  if (interactive) {
+    rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  }
+
+  const provider = options.provider || await ask(rl, "Provider (mock/openai/deepseek/qwen/ollama)", "mock");
+  const model = options.model || await ask(rl, "Model (leave empty for provider default)", "");
+  const baseUrl = options.baseUrl || await ask(rl, "Base URL override (optional)", "");
+  const includeToken = options.withApiToken || await askBoolean(rl, "Generate AI_TOOLS_API_TOKEN?", false);
+
+  if (rl) {
+    rl.close();
+  }
+
+  const lines = [
+    `AI_PROVIDER=${provider}`,
+    model ? `AI_MODEL=${model}` : "AI_MODEL=",
+    baseUrl ? `AI_BASE_URL=${baseUrl}` : "AI_BASE_URL=",
+    "OPENAI_API_KEY=",
+    "DEEPSEEK_API_KEY=",
+    "QWEN_API_KEY=",
+    "DOUBAO_API_KEY=",
+    "MOONSHOT_API_KEY=",
+    "GEMINI_API_KEY=",
+    "ANTHROPIC_API_KEY=",
+    "OLLAMA_BASE_URL=http://localhost:11434",
+    includeToken ? `AI_TOOLS_API_TOKEN=${crypto.randomBytes(24).toString("hex")}` : "AI_TOOLS_API_TOKEN=",
+    "PORT=5177",
+    ""
+  ];
+
+  await fs.writeFile(envPath, lines.join("\n"), "utf8");
+  console.log(`Wrote ${envPath}`);
+}
+
+async function testProvider(options) {
+  const result = await runTool({
+    toolId: "rewrite",
+    input: "Provider connectivity test.",
+    option: "shorten",
+    language: "en",
+    provider: {
+      provider: options.provider,
+      model: options.model,
+      baseUrl: options.baseUrl,
+      apiKey: options.apiKey
+    },
+    temperature: 0
+  });
+  console.log(JSON.stringify({
+    ok: true,
+    provider: result.provider,
+    outputPreview: result.output.slice(0, 240)
+  }, null, 2));
 }
 
 async function runBatch(options) {
@@ -201,13 +288,43 @@ function flattenValues(value) {
   return values.flatMap((item) => String(item).split(",")).map((item) => item.trim()).filter(Boolean);
 }
 
+async function ask(rl, question, defaultValue) {
+  if (!rl) {
+    return defaultValue;
+  }
+  const answer = await rl.question(`${question}${defaultValue ? ` [${defaultValue}]` : ""}: `);
+  return answer.trim() || defaultValue;
+}
+
+async function askBoolean(rl, question, defaultValue) {
+  if (!rl) {
+    return defaultValue;
+  }
+  const answer = await rl.question(`${question} ${defaultValue ? "[Y/n]" : "[y/N]"}: `);
+  if (!answer.trim()) {
+    return defaultValue;
+  }
+  return ["y", "yes"].includes(answer.trim().toLowerCase());
+}
+
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function printHelp() {
   console.log(`AI Tools Kit CLI
 
 Usage:
   ai-tools --list
   ai-tools --providers
+  ai-tools --init
   ai-tools --doctor --provider deepseek
+  ai-tools --test-provider --provider mock
   ai-tools --validate-tools
   ai-tools --tool rewrite --input "Draft this" --print-prompt
   ai-tools --tool rewrite --input "Make this better" --lang en
@@ -229,6 +346,12 @@ Options:
   --base-url <url>     Override provider base URL.
   --api-key <key>      Override provider API key.
   --temperature <num>  Defaults to 0.4.
+  --init               Create a .env file. Use --yes for defaults and --force to overwrite.
+  --env <path>         Env file path for --init. Defaults to .env.
+  --with-api-token     Generate AI_TOOLS_API_TOKEN during --init.
+  --yes                Use defaults for --init.
+  --force              Overwrite existing env file during --init.
+  --test-provider      Send a tiny request to verify the current provider works.
   --doctor             Print provider configuration diagnostics.
   --validate-tools     Validate tools/custom.json or --custom-tools.
   --custom-tools <path>

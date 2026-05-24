@@ -2,6 +2,16 @@
 
 AI Tools Kit exposes a small local HTTP API from the same Node server that serves the web app.
 
+## Authentication
+
+If `AI_TOOLS_API_TOKEN` is set, protected API calls require:
+
+```text
+Authorization: Bearer <AI_TOOLS_API_TOKEN>
+```
+
+`GET /api/health` and `GET /api/meta` stay public so clients can discover server state and configuration requirements.
+
 ## `GET /api/health`
 
 Returns runtime health, provider diagnostics, custom tool validation, and a security note.

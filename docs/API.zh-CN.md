@@ -2,6 +2,16 @@
 
 AI Tools Kit 的 Node 服务同时提供网页和本地 HTTP API。
 
+## 鉴权
+
+如果设置了 `AI_TOOLS_API_TOKEN`，受保护 API 需要携带：
+
+```text
+Authorization: Bearer <AI_TOOLS_API_TOKEN>
+```
+
+`GET /api/health` 和 `GET /api/meta` 保持公开，方便客户端发现服务状态和配置要求。
+
 ## `GET /api/health`
 
 返回运行状态、Provider 诊断、自定义工具校验结果和安全说明。
