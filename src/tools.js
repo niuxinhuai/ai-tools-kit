@@ -194,6 +194,65 @@ export function getTool(id) {
   return tools.find((tool) => tool.id === id);
 }
 
+export function getCustomToolsFilePath() {
+  return process.env.AI_TOOLS_CUSTOM_FILE || path.resolve(process.cwd(), "tools/custom.json");
+}
+
+export function validateCustomTools(filePath = getCustomToolsFilePath()) {
+  const result = {
+    ok: true,
+    filePath,
+    exists: fs.existsSync(filePath),
+    count: 0,
+    errors: [],
+    warnings: []
+  };
+
+  if (!result.exists) {
+    result.warnings.push("Custom tools file does not exist. This is fine unless you expected local tools.");
+    return result;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (error) {
+    result.ok = false;
+    result.errors.push(`Invalid JSON: ${error.message}`);
+    return result;
+  }
+
+  const items = Array.isArray(parsed) ? parsed : parsed.tools;
+  if (!Array.isArray(items)) {
+    result.ok = false;
+    result.errors.push('Custom tools file must contain an array or {"tools": []}.');
+    return result;
+  }
+
+  const ids = new Set(builtInTools.map((tool) => tool.id));
+  items.forEach((item, index) => {
+    const label = `tools[${index}]`;
+    for (const key of ["id", "title", "description", "inputLabel", "placeholder", "promptTemplate"]) {
+      if (!item?.[key]) {
+        result.errors.push(`${label} is missing "${key}".`);
+      }
+    }
+    if (item?.id) {
+      if (ids.has(String(item.id))) {
+        result.errors.push(`${label} id "${item.id}" duplicates another tool.`);
+      }
+      ids.add(String(item.id));
+    }
+    if (item?.options !== undefined && (!Array.isArray(item.options) || !item.options.length)) {
+      result.errors.push(`${label} options must be a non-empty array when provided.`);
+    }
+  });
+
+  result.count = items.length;
+  result.ok = result.errors.length === 0;
+  return result;
+}
+
 export function buildToolPrompt({ toolId, input, option, language = "zh" }) {
   const tool = getTool(toolId);
   if (!tool) {
@@ -210,27 +269,17 @@ export function buildToolPrompt({ toolId, input, option, language = "zh" }) {
 }
 
 function loadCustomTools() {
-  const filePath = process.env.AI_TOOLS_CUSTOM_FILE || path.resolve(process.cwd(), "tools/custom.json");
-  if (!fs.existsSync(filePath)) {
+  const validation = validateCustomTools();
+  if (!validation.exists || !validation.ok) {
     return [];
   }
 
-  const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const parsed = JSON.parse(fs.readFileSync(validation.filePath, "utf8"));
   const items = Array.isArray(parsed) ? parsed : parsed.tools;
-  if (!Array.isArray(items)) {
-    throw new Error(`Custom tools file must contain an array or {"tools": []}: ${filePath}`);
-  }
-
-  return items.map((item) => normalizeCustomTool(item, filePath));
+  return items.map((item) => normalizeCustomTool(item));
 }
 
-function normalizeCustomTool(item, filePath) {
-  const required = ["id", "title", "description", "inputLabel", "placeholder", "promptTemplate"];
-  for (const key of required) {
-    if (!item[key]) {
-      throw new Error(`Custom tool in ${filePath} is missing "${key}".`);
-    }
-  }
+function normalizeCustomTool(item) {
   const options = Array.isArray(item.options) && item.options.length
     ? item.options
     : [{ value: "default", zh: "默认", en: "Default" }];

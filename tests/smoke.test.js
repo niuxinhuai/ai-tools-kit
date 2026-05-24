@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { expandFilePatterns, formatResult } from "../src/files.js";
 import { runTool, streamTool } from "../src/run.js";
-import { tools } from "../src/tools.js";
+import { buildToolPrompt, tools, validateCustomTools } from "../src/tools.js";
 import { listProviders } from "../src/providers.js";
 
 assert.ok(tools.length >= 5, "expected at least five tools");
@@ -42,5 +42,14 @@ await fs.writeFile(path.join(tempDir, "two.txt"), "two", "utf8");
 const matched = await expandFilePatterns([path.join(tempDir, "*.md")]);
 assert.equal(matched.length, 1);
 assert.match(formatResult(result, "md"), /# summarize/);
+assert.match(buildToolPrompt({
+  toolId: "rewrite",
+  input: "hello",
+  language: "en"
+}), /Rewrite the following content/);
+
+const validation = validateCustomTools("tools/custom.example.json");
+assert.equal(validation.ok, true);
+assert.equal(validation.count, 1);
 
 console.log("Smoke tests passed.");

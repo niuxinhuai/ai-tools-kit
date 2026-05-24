@@ -15,6 +15,8 @@ A practical bilingual AI toolbox that works as both a web app and a CLI. It is d
 - Batch CLI processing for multiple files.
 - Custom tools through `tools/custom.json`.
 - Provider diagnostics through the web app and `ai-tools --doctor`.
+- Prompt preview in the web app and CLI.
+- Local HTTP API for automation and scripting.
 - No build step required.
 
 ## Quick Start
@@ -42,6 +44,8 @@ npm run cli -- --tool rewrite --input "Make this sentence better." --lang en --p
 cat notes.md | npm run cli -- --tool summarize --option structured --lang zh
 npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
 npm run cli -- --doctor --provider deepseek
+npm run cli -- --validate-tools
+npm run cli -- --tool rewrite --input "Draft this" --print-prompt
 ```
 
 If installed globally or linked locally:
@@ -105,6 +109,11 @@ mkdir -p tools
 cp tools/custom.example.json tools/custom.json
 npm start
 ```
+
+## API and Security
+
+- API docs: [docs/API.md](./docs/API.md)
+- Security notes: [docs/SECURITY.md](./docs/SECURITY.md)
 
 ## Project Structure
 

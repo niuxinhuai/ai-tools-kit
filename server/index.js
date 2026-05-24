@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadEnv } from "../src/env.js";
 import { runTool, streamTool } from "../src/run.js";
-import { languages, tools } from "../src/tools.js";
+import { buildToolPrompt, languages, tools, validateCustomTools } from "../src/tools.js";
 import { diagnoseProvider, listProviders, resolveProvider } from "../src/providers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -12,6 +12,7 @@ const rootDir = path.resolve(__dirname, "..");
 loadEnv(path.join(rootDir, ".env"));
 const publicDir = path.join(rootDir, "public");
 const port = Number(process.env.PORT || 5177);
+const startedAt = new Date().toISOString();
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -33,10 +34,41 @@ const server = http.createServer(async (request, response) => {
       });
     }
 
+    if (request.method === "GET" && request.url === "/api/health") {
+      const providerStatus = diagnoseProvider();
+      const customTools = validateCustomTools();
+      return sendJson(response, {
+        ok: providerStatus.ok && customTools.ok,
+        uptimeSeconds: Math.round(process.uptime()),
+        startedAt,
+        providerStatus,
+        customTools,
+        tools: {
+          count: tools.length,
+          customCount: tools.filter((tool) => tool.custom).length
+        },
+        security: {
+          apiKeysExposedToBrowser: false,
+          apiKeysSource: "server environment variables"
+        }
+      });
+    }
+
     if (request.method === "POST" && request.url === "/api/run") {
       const payload = await readBody(request);
       const result = await runTool(payload);
       return sendJson(response, result);
+    }
+
+    if (request.method === "POST" && request.url === "/api/prompt") {
+      const payload = await readBody(request);
+      const prompt = buildToolPrompt({
+        toolId: payload.toolId,
+        input: payload.input || "",
+        option: payload.option,
+        language: payload.language
+      });
+      return sendJson(response, { prompt });
     }
 
     if (request.method === "POST" && request.url === "/api/run-stream") {

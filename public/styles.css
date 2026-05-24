@@ -212,6 +212,7 @@ input:focus {
 
 #copyButton,
 #sampleButton,
+#promptButton,
 #fileButton,
 #clearHistoryButton,
 .export-button {

@@ -5,7 +5,7 @@ import process from "node:process";
 import { loadEnv } from "../src/env.js";
 import { expandFilePatterns, formatResult, outputFileName } from "../src/files.js";
 import { runTool } from "../src/run.js";
-import { tools } from "../src/tools.js";
+import { buildToolPrompt, tools, validateCustomTools } from "../src/tools.js";
 import { diagnoseProvider, listProviders } from "../src/providers.js";
 
 loadEnv();
@@ -37,10 +37,27 @@ if (args.doctor) {
   process.exit(status.ok || status.level === "warning" ? 0 : 1);
 }
 
+if (args.validateTools) {
+  const validation = validateCustomTools(args.customTools);
+  console.log(JSON.stringify(validation, null, 2));
+  process.exit(validation.ok ? 0 : 1);
+}
+
 try {
-  if (args.files) {
-    await runBatch(args);
+  if (args.printPrompt) {
+    const input = await resolveInput(args);
+    console.log(buildToolPrompt({
+      toolId: args.tool || "rewrite",
+      input,
+      option: args.option,
+      language: args.lang || args.language || "zh"
+    }));
     process.exit(0);
+  }
+
+  if (args.files) {
+    const summary = await runBatch(args);
+    process.exit(summary.failed ? 1 : 0);
   }
 
   const input = await resolveInput(args);
@@ -77,40 +94,61 @@ async function runBatch(options) {
 
   const format = options.format || (options.json ? "json" : "md");
   const results = [];
+  const failures = [];
   if (options.out) {
     await fs.mkdir(options.out, { recursive: true });
   }
 
   for (const file of files) {
-    const input = await fs.readFile(file, "utf8");
-    const result = await runTool({
-      toolId: options.tool || "summarize",
-      input,
-      option: options.option,
-      language: options.lang || options.language || "zh",
-      provider: {
-        provider: options.provider,
-        model: options.model,
-        baseUrl: options.baseUrl,
-        apiKey: options.apiKey
-      },
-      temperature: options.temperature
-    });
-    results.push({ file, ...result });
+    try {
+      const input = await fs.readFile(file, "utf8");
+      const result = await runTool({
+        toolId: options.tool || "summarize",
+        input,
+        option: options.option,
+        language: options.lang || options.language || "zh",
+        provider: {
+          provider: options.provider,
+          model: options.model,
+          baseUrl: options.baseUrl,
+          apiKey: options.apiKey
+        },
+        temperature: options.temperature
+      });
+      results.push({ file, ...result });
 
-    if (options.out) {
-      const extension = format === "json" ? "json" : format === "txt" ? "txt" : "md";
-      const outputPath = path.join(options.out, outputFileName(file, extension));
-      await fs.writeFile(outputPath, formatResult({ file, ...result }, format), "utf8");
-      console.error(`Wrote ${outputPath}`);
-    } else {
-      console.log(formatResult({ file, ...result }, format));
+      if (options.out) {
+        const extension = format === "json" ? "json" : format === "txt" ? "txt" : "md";
+        const outputPath = path.join(options.out, outputFileName(file, extension));
+        await fs.writeFile(outputPath, formatResult({ file, ...result }, format), "utf8");
+        console.error(`Wrote ${outputPath}`);
+      } else {
+        console.log(formatResult({ file, ...result }, format));
+      }
+    } catch (error) {
+      failures.push({ file, error: error.message });
+      console.error(`Failed ${file}: ${error.message}`);
+      if (options.failFast) {
+        break;
+      }
     }
   }
 
+  const summary = {
+    total: files.length,
+    succeeded: results.length,
+    failed: failures.length,
+    failures
+  };
+  console.error(`Batch summary: ${summary.succeeded}/${summary.total} succeeded, ${summary.failed} failed.`);
+
   if (options.out && options.json) {
-    console.log(JSON.stringify(results, null, 2));
+    console.log(JSON.stringify({ summary, results }, null, 2));
   }
+  if (failures.length) {
+    process.exitCode = 1;
+  }
+  return summary;
 }
 
 async function resolveInput(options) {
@@ -170,6 +208,8 @@ Usage:
   ai-tools --list
   ai-tools --providers
   ai-tools --doctor --provider deepseek
+  ai-tools --validate-tools
+  ai-tools --tool rewrite --input "Draft this" --print-prompt
   ai-tools --tool rewrite --input "Make this better" --lang en
   cat notes.md | ai-tools --tool summarize --option structured --lang zh
   ai-tools --tool code-explain --file ./snippet.js --provider ollama --model llama3.1
@@ -190,6 +230,10 @@ Options:
   --api-key <key>      Override provider API key.
   --temperature <num>  Defaults to 0.4.
   --doctor             Print provider configuration diagnostics.
+  --validate-tools     Validate tools/custom.json or --custom-tools.
+  --custom-tools <path>
+  --print-prompt       Print the final prompt without calling a provider.
+  --fail-fast          Stop batch mode at the first failed file.
   --json               Print full JSON result.
 `);
 }
