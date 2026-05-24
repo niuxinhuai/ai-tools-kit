@@ -9,7 +9,8 @@ import { loadProjectConfig, mergeProjectConfig, projectConfigFileName, samplePro
 import { loadEnv } from "../src/env.js";
 import { expandFilePatterns, formatResult, outputFileName } from "../src/files.js";
 import { runChunkedTool, runTool, runWorkflow } from "../src/run.js";
-import { buildToolPrompt, tools, validateCustomTools } from "../src/tools.js";
+import { installTemplate, listTemplates } from "../src/templates.js";
+import { buildToolPrompt, getCustomToolsFilePath, tools, validateCustomTools } from "../src/tools.js";
 import { diagnoseProvider, listProviders } from "../src/providers.js";
 
 loadEnv();
@@ -53,6 +54,27 @@ if (args.list) {
 if (args.providers) {
   console.log(listProviders().join("\n"));
   process.exit(0);
+}
+
+if (args.templates) {
+  const templates = await listTemplates();
+  console.log(templates.map((template) => `${template.name}\t${template.count} tools\t${template.tools.join(", ")}`).join("\n"));
+  process.exit(0);
+}
+
+if (args.installTemplate) {
+  try {
+    const result = await installTemplate(args.installTemplate, {
+      targetPath: args.customTools || getCustomToolsFilePath(),
+      merge: Boolean(args.mergeTemplate),
+      force: Boolean(args.force)
+    });
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(0);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
 }
 
 if (args.clearCache) {
@@ -530,6 +552,8 @@ function printHelp() {
 Usage:
   ai-tools --list
   ai-tools --providers
+  ai-tools --templates
+  ai-tools --install-template developer-tools --merge-template
   ai-tools --init
   ai-tools --init-config
   ai-tools --doctor --provider deepseek
@@ -582,6 +606,9 @@ Options:
   --doctor             Print provider configuration diagnostics.
   --validate-tools     Validate tools/custom.json or --custom-tools.
   --custom-tools <path>
+  --templates          List reusable custom tool templates.
+  --install-template <name|path> Install a template into tools/custom.json or --custom-tools.
+  --merge-template     Merge template tools into the target custom tools file.
   --print-prompt       Print the final prompt without calling a provider.
   --fail-fast          Stop batch mode at the first failed file.
   --json               Print full JSON result.

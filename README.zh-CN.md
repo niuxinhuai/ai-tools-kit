@@ -22,6 +22,8 @@ npm run cli -- --list
 npm run cli -- --tool rewrite --input "帮我把这句话改自然一点。" --lang zh --provider mock
 npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
 npm run cli -- --tool summarize --files "docs/*.md" --format jsonl --retries 2
+npm run cli -- --templates
+npm run cli -- --install-template developer-tools --merge-template
 npm run cli -- --tool email-reply --input "感谢更新" --var audience=customer --var goal="确认下一步"
 npm run cli -- --init-config
 npm run cli -- --workflow workflows/content-pipeline.json --file notes.md --provider mock
@@ -39,6 +41,7 @@ AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
 - CLI 支持批量处理、JSONL 输出、失败重试、多文件合并、长文本分块、本地缓存、工作流和 Provider fallback。
 - 支持通过 `.ai-tools-kit.json` 保存项目级 CLI 默认配置。
 - 支持通过 `tools/custom.json` 增加自定义工具，并提供 `tools/templates/` 模板库。
+- 支持通过 CLI 安装可复用自定义工具模板包。
 - 自定义工具支持 Prompt 变量，网页端自动生成表单，CLI 支持 `--var`。
 - 提供本地 HTTP API、OpenAPI 规范、可选 API Token 鉴权、Docker 支持和 npm 发布配置。
 

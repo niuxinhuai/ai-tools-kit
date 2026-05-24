@@ -113,3 +113,19 @@ You can also point to a template directly:
 ```bash
 AI_TOOLS_CUSTOM_FILE=tools/templates/product-and-content.json npm start
 ```
+
+Or install templates through the CLI:
+
+```bash
+ai-tools --templates
+ai-tools --install-template developer-tools
+ai-tools --install-template product-and-content --merge-template
+ai-tools --install-template developer-tools --custom-tools ./team-tools.json --force
+```
+
+Notes:
+
+- `--install-template <name>` writes to `tools/custom.json` by default.
+- `--custom-tools <path>` chooses a different target file.
+- `--merge-template` appends template tools into an existing file.
+- `--force` overwrites the target in install mode, or replaces duplicate tool IDs in merge mode.

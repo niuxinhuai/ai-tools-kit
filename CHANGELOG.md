@@ -2,6 +2,12 @@
 
 ## 2026-05-24
 
+### feat: Add custom tool template installer
+
+- Added `--templates` to list reusable custom tool templates.
+- Added `--install-template`, `--merge-template`, and `--force` for installing or merging template packs.
+- Updated custom tool docs, README examples, syntax checks, and CLI tests.
+
 ### feat: Add batch retries and JSONL output
 
 - Added `--retries` for failed batch items.

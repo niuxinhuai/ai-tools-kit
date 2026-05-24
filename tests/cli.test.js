@@ -25,6 +25,7 @@ const sourceFile = path.join(tempDir, "note.md");
 const outDir = path.join(tempDir, "out");
 await fs.writeFile(sourceFile, "CLI batch test", "utf8");
 const customToolsFile = path.join(tempDir, "custom.json");
+const installedToolsFile = path.join(tempDir, "installed-tools.json");
 const configDir = path.join(tempDir, "project");
 await fs.mkdir(configDir, { recursive: true });
 await fs.writeFile(customToolsFile, JSON.stringify({
@@ -43,6 +44,28 @@ await fs.writeFile(customToolsFile, JSON.stringify({
     }
   ]
 }), "utf8");
+
+const templates = await runCli(["--templates"]);
+assert.match(templates.stdout, /developer-tools/);
+assert.match(templates.stdout, /product-and-content/);
+
+const installedTemplate = await runCli(["--install-template", "developer-tools", "--custom-tools", installedToolsFile]);
+assert.match(installedTemplate.stdout, /"installed": 3/);
+const installedTools = JSON.parse(await fs.readFile(installedToolsFile, "utf8"));
+assert.equal(installedTools.tools.length, 3);
+
+const duplicateInstall = await runCliAllowFailure(["--install-template", "developer-tools", "--custom-tools", installedToolsFile]);
+assert.equal(duplicateInstall.code, 1);
+assert.match(duplicateInstall.stderr, /already exists/);
+
+const mergedTemplate = await runCli(["--install-template", "product-and-content", "--custom-tools", installedToolsFile, "--merge-template"]);
+assert.match(mergedTemplate.stdout, /"merged": true/);
+const mergedTools = JSON.parse(await fs.readFile(installedToolsFile, "utf8"));
+assert.equal(mergedTools.tools.length, 6);
+
+const duplicateMerge = await runCliAllowFailure(["--install-template", "developer-tools", "--custom-tools", installedToolsFile, "--merge-template"]);
+assert.equal(duplicateMerge.code, 1);
+assert.match(duplicateMerge.stderr, /already exists/);
 
 const initConfig = await runCli(["--init-config"], {}, configDir);
 assert.match(initConfig.stdout, /Wrote/);

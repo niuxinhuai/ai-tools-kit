@@ -113,3 +113,19 @@ npm start
 ```bash
 AI_TOOLS_CUSTOM_FILE=tools/templates/product-and-content.json npm start
 ```
+
+也可以通过 CLI 安装模板：
+
+```bash
+ai-tools --templates
+ai-tools --install-template developer-tools
+ai-tools --install-template product-and-content --merge-template
+ai-tools --install-template developer-tools --custom-tools ./team-tools.json --force
+```
+
+说明：
+
+- `--install-template <name>` 默认写入 `tools/custom.json`。
+- `--custom-tools <path>` 可以指定其他目标文件。
+- `--merge-template` 会把模板工具合并到现有文件。
+- `--force` 在安装模式下会覆盖目标文件，在合并模式下会替换重复工具 ID。
