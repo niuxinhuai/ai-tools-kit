@@ -3,7 +3,67 @@ const state = {
   languages: {},
   providers: [],
   activeToolId: "rewrite",
-  locale: "zh"
+  language: localStorage.getItem("ai-tools-language") || "zh",
+  locale: "zh",
+  activeMeta: null,
+  history: loadHistory()
+};
+
+const ui = {
+  zh: {
+    tagline: "网页 + CLI 双语 AI 小工具",
+    search: "搜索工具 / Search tools",
+    language: "语言",
+    mode: "模式",
+    provider: "Provider",
+    model: "模型",
+    modelPlaceholder: "使用 Provider 默认模型",
+    copy: "复制",
+    copied: "已复制",
+    import: "导入",
+    sample: "示例",
+    run: "运行工具",
+    running: "生成中",
+    generating: "正在生成...",
+    failed: "失败",
+    ready: "就绪",
+    output: "输出",
+    history: "历史记录",
+    clear: "清空",
+    emptyInput: "请先输入内容。",
+    emptyOutput: "选择一个工具，粘贴内容，然后运行。",
+    emptyHistory: "还没有历史记录。",
+    chars: (count) => `${count} 字符`,
+    imported: (name) => `已导入 ${name}`,
+    fileTooLarge: "文件太大，请选择 1MB 以内的文本文件。"
+  },
+  en: {
+    tagline: "Web + CLI bilingual AI tools",
+    search: "Search tools",
+    language: "Language",
+    mode: "Mode",
+    provider: "Provider",
+    model: "Model",
+    modelPlaceholder: "Use provider default",
+    copy: "Copy",
+    copied: "Copied",
+    import: "Import",
+    sample: "Sample",
+    run: "Run Tool",
+    running: "Running",
+    generating: "Generating...",
+    failed: "Failed",
+    ready: "Ready",
+    output: "Output",
+    history: "History",
+    clear: "Clear",
+    emptyInput: "Please enter some text first.",
+    emptyOutput: "Choose a tool, paste your input, then run it.",
+    emptyHistory: "No history yet.",
+    chars: (count) => `${count} chars`,
+    imported: (name) => `Imported ${name}`,
+    fileTooLarge: "File is too large. Please choose a text file under 1MB."
+  }
 };
 
 const samples = {
@@ -43,9 +103,13 @@ const elements = {
   outputText: document.querySelector("#outputText"),
   runButton: document.querySelector("#runButton"),
   sampleButton: document.querySelector("#sampleButton"),
+  fileButton: document.querySelector("#fileButton"),
+  fileInput: document.querySelector("#fileInput"),
   copyButton: document.querySelector("#copyButton"),
   charCount: document.querySelector("#charCount"),
-  runMeta: document.querySelector("#runMeta")
+  runMeta: document.querySelector("#runMeta"),
+  clearHistoryButton: document.querySelector("#clearHistoryButton"),
+  historyList: document.querySelector("#historyList")
 };
 
 init();
@@ -55,39 +119,75 @@ async function init() {
   state.tools = meta.tools;
   state.languages = meta.languages;
   state.providers = meta.providers;
+  state.locale = state.language === "en" ? "en" : "zh";
   elements.providerBadge.textContent = `${meta.activeProvider.name} / ${meta.activeProvider.model}`;
   renderControls();
-  renderToolList();
   selectTool(state.activeToolId);
+  applyLocale();
+  renderToolList();
+  renderHistory();
   bindEvents();
 }
 
 function bindEvents() {
   elements.searchInput.addEventListener("input", renderToolList);
   elements.languageSelect.addEventListener("change", () => {
-    state.locale = elements.languageSelect.value === "en" ? "en" : "zh";
+    state.language = elements.languageSelect.value;
+    state.locale = state.language === "en" ? "en" : "zh";
+    localStorage.setItem("ai-tools-language", state.language);
+    applyLocale();
     renderToolList();
     selectTool(state.activeToolId, false);
+    renderHistory();
   });
   elements.inputText.addEventListener("input", updateCharCount);
   elements.sampleButton.addEventListener("click", () => {
     elements.inputText.value = samples[state.activeToolId] || "";
     updateCharCount();
   });
+  elements.fileButton.addEventListener("click", () => elements.fileInput.click());
+  elements.fileInput.addEventListener("change", importFile);
   elements.runButton.addEventListener("click", runActiveTool);
+  elements.clearHistoryButton.addEventListener("click", () => {
+    state.history = [];
+    saveHistory();
+    renderHistory();
+  });
   elements.copyButton.addEventListener("click", async () => {
     await navigator.clipboard.writeText(elements.outputText.textContent);
-    elements.copyButton.textContent = "Copied";
+    elements.copyButton.textContent = t("copied");
     setTimeout(() => {
-      elements.copyButton.textContent = "Copy";
+      elements.copyButton.textContent = t("copy");
     }, 1200);
   });
+}
+
+function applyLocale() {
+  document.documentElement.lang = state.locale === "zh" ? "zh-CN" : "en";
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    node.textContent = t(node.dataset.i18n);
+  });
+  elements.searchInput.placeholder = t("search");
+  elements.modelInput.placeholder = t("modelPlaceholder");
+  elements.copyButton.textContent = t("copy");
+  elements.fileButton.textContent = t("import");
+  elements.sampleButton.textContent = t("sample");
+  elements.runButton.textContent = t("run");
+  elements.clearHistoryButton.textContent = t("clear");
+  if (elements.outputText.textContent === "Choose a tool, paste your input, then run it." || elements.outputText.textContent === "选择一个工具，粘贴内容，然后运行。") {
+    elements.outputText.textContent = t("emptyOutput");
+  }
+  if (elements.runMeta.textContent === "Ready" || elements.runMeta.textContent === "就绪") {
+    elements.runMeta.textContent = t("ready");
+  }
+  updateCharCount();
 }
 
 function renderControls() {
   elements.languageSelect.innerHTML = Object.entries(state.languages)
     .map(([value, lang]) => `<option value="${value}">${escapeHtml(lang.label)}</option>`)
     .join("");
+  elements.languageSelect.value = state.language;
   elements.providerSelect.innerHTML = state.providers
     .map((provider) => `<option value="${provider}">${provider}</option>`)
     .join("");
@@ -139,41 +239,158 @@ function selectTool(toolId, shouldRenderList = true) {
 async function runActiveTool() {
   const input = elements.inputText.value.trim();
   if (!input) {
-    elements.outputText.textContent = "Please enter some text first.";
+    elements.outputText.textContent = t("emptyInput");
     return;
   }
   elements.runButton.disabled = true;
-  elements.runButton.textContent = "Running";
-  elements.runMeta.textContent = "Generating...";
+  elements.runButton.textContent = t("running");
+  elements.runMeta.textContent = t("generating");
+  elements.outputText.textContent = "";
+  state.activeMeta = null;
   const started = performance.now();
+
   try {
-    const result = await fetchJson("/api/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        toolId: state.activeToolId,
-        input,
-        option: elements.optionSelect.value,
-        language: elements.languageSelect.value,
-        provider: {
-          provider: elements.providerSelect.value,
-          model: elements.modelInput.value.trim()
-        }
-      })
+    await streamJsonEvents("/api/run-stream", {
+      toolId: state.activeToolId,
+      input,
+      option: elements.optionSelect.value,
+      language: elements.languageSelect.value,
+      provider: {
+        provider: elements.providerSelect.value,
+        model: elements.modelInput.value.trim()
+      }
+    }, (event) => {
+      if (event.type === "meta") {
+        state.activeMeta = event;
+        elements.runMeta.textContent = `${event.provider.name} / ${event.provider.model}`;
+      }
+      if (event.type === "chunk") {
+        elements.outputText.textContent += event.text;
+      }
+      if (event.type === "error") {
+        throw new Error(event.error);
+      }
     });
-    elements.outputText.textContent = result.output || "(empty response)";
-    elements.runMeta.textContent = `${result.provider.name} / ${result.provider.model} / ${Math.round(performance.now() - started)}ms`;
+    const elapsed = Math.round(performance.now() - started);
+    const provider = state.activeMeta?.provider;
+    elements.runMeta.textContent = provider ? `${provider.name} / ${provider.model} / ${elapsed}ms` : `${elapsed}ms`;
+    addHistory({
+      toolId: state.activeToolId,
+      option: elements.optionSelect.value,
+      input,
+      output: elements.outputText.textContent,
+      provider: provider?.name || elements.providerSelect.value,
+      createdAt: new Date().toISOString()
+    });
   } catch (error) {
     elements.outputText.textContent = error.message;
-    elements.runMeta.textContent = "Failed";
+    elements.runMeta.textContent = t("failed");
   } finally {
     elements.runButton.disabled = false;
-    elements.runButton.textContent = "Run Tool";
+    elements.runButton.textContent = t("run");
   }
 }
 
+async function streamJsonEvents(url, payload, onEvent) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok || !response.body) {
+    const data = await response.json();
+    throw new Error(data.error || response.statusText);
+  }
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for await (const chunk of response.body) {
+    buffer += decoder.decode(chunk, { stream: true });
+    const messages = buffer.split("\n\n");
+    buffer = messages.pop() || "";
+    for (const message of messages) {
+      const line = message.split("\n").find((item) => item.startsWith("data:"));
+      if (!line) {
+        continue;
+      }
+      onEvent(JSON.parse(line.slice(5).trim()));
+    }
+  }
+}
+
+function importFile() {
+  const file = elements.fileInput.files?.[0];
+  if (!file) {
+    return;
+  }
+  if (file.size > 1024 * 1024) {
+    elements.runMeta.textContent = t("fileTooLarge");
+    elements.fileInput.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    elements.inputText.value = String(reader.result || "");
+    elements.runMeta.textContent = t("imported", file.name);
+    updateCharCount();
+  });
+  reader.readAsText(file);
+  elements.fileInput.value = "";
+}
+
+function addHistory(item) {
+  state.history = [item, ...state.history].slice(0, 12);
+  saveHistory();
+  renderHistory();
+}
+
+function renderHistory() {
+  if (!state.history.length) {
+    elements.historyList.innerHTML = `<span class="history-empty">${escapeHtml(t("emptyHistory"))}</span>`;
+    return;
+  }
+  elements.historyList.innerHTML = state.history
+    .map((item, index) => {
+      const tool = state.tools.find((entry) => entry.id === item.toolId);
+      const title = tool?.title[state.locale] || tool?.title.en || item.toolId;
+      const preview = item.output.replace(/\s+/g, " ").slice(0, 150);
+      return `<button class="history-item" data-history-index="${index}" type="button">
+        <strong>${escapeHtml(title)} · ${escapeHtml(item.provider)}</strong>
+        <span>${escapeHtml(preview)}${item.output.length > 150 ? "..." : ""}</span>
+      </button>`;
+    })
+    .join("");
+  elements.historyList.querySelectorAll("[data-history-index]").forEach((button) => {
+    button.addEventListener("click", () => restoreHistory(Number(button.dataset.historyIndex)));
+  });
+}
+
+function restoreHistory(index) {
+  const item = state.history[index];
+  if (!item) {
+    return;
+  }
+  selectTool(item.toolId);
+  elements.optionSelect.value = item.option;
+  elements.inputText.value = item.input;
+  elements.outputText.textContent = item.output;
+  elements.runMeta.textContent = `${item.provider} / ${new Date(item.createdAt).toLocaleString()}`;
+  updateCharCount();
+}
+
+function loadHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("ai-tools-history") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory() {
+  localStorage.setItem("ai-tools-history", JSON.stringify(state.history));
+}
+
 function updateCharCount() {
-  elements.charCount.textContent = `${elements.inputText.value.length} chars`;
+  elements.charCount.textContent = t("chars", elements.inputText.value.length);
 }
 
 async function fetchJson(url, options) {
@@ -187,6 +404,11 @@ async function fetchJson(url, options) {
 
 function renderIcon(name) {
   return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icons[name] || icons.sparkles}"/></svg>`;
+}
+
+function t(key, ...args) {
+  const value = ui[state.locale]?.[key] ?? ui.en[key] ?? key;
+  return typeof value === "function" ? value(...args) : value;
 }
 
 function escapeHtml(value) {

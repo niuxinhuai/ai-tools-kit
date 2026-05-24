@@ -10,6 +10,8 @@ English docs: [README.md](./README.md).
 - 支持中文、英文、中英双语输出。
 - Web 和 CLI 共用同一套工具定义。
 - 支持 OpenAI、OpenAI 兼容接口、DeepSeek、通义千问、豆包、Moonshot、Gemini、Anthropic、Ollama 和本地 Mock 模式。
+- 网页端支持 OpenAI 兼容接口和 Ollama 的流式输出。
+- 支持文本文件导入和浏览器本地历史记录。
 - 零运行依赖，不需要构建步骤。
 
 ## 快速开始
@@ -76,6 +78,17 @@ Ollama 本地模型示例：
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
 AI_MODEL=llama3.1
+```
+
+## 部署
+
+见 [docs/DEPLOYMENT.zh-CN.md](./docs/DEPLOYMENT.zh-CN.md)。
+
+Docker 快速启动：
+
+```bash
+cp .env.example .env
+docker compose up --build
 ```
 
 ## 项目结构

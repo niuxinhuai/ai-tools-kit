@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadEnv } from "../src/env.js";
-import { runTool } from "../src/run.js";
+import { runTool, streamTool } from "../src/run.js";
 import { languages, tools } from "../src/tools.js";
 import { listProviders, resolveProvider } from "../src/providers.js";
 
@@ -36,6 +36,11 @@ const server = http.createServer(async (request, response) => {
       const payload = await readBody(request);
       const result = await runTool(payload);
       return sendJson(response, result);
+    }
+
+    if (request.method === "POST" && request.url === "/api/run-stream") {
+      const payload = await readBody(request);
+      return sendEventStream(response, streamTool(payload));
     }
 
     if (request.method === "GET") {
@@ -85,6 +90,23 @@ async function readBody(request) {
 function sendJson(response, body, status = 200) {
   response.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(body));
+}
+
+async function sendEventStream(response, events) {
+  response.writeHead(200, {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive"
+  });
+  try {
+    for await (const event of events) {
+      response.write(`data: ${JSON.stringify(event)}\n\n`);
+    }
+  } catch (error) {
+    response.write(`data: ${JSON.stringify({ type: "error", error: error.message || "Unexpected error" })}\n\n`);
+  } finally {
+    response.end();
+  }
 }
 
 function publicProviderInfo() {

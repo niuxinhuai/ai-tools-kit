@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { runTool } from "../src/run.js";
+import { runTool, streamTool } from "../src/run.js";
 import { tools } from "../src/tools.js";
 import { listProviders } from "../src/providers.js";
 
@@ -17,5 +17,19 @@ const result = await runTool({
 assert.equal(result.toolId, "summarize");
 assert.equal(result.provider.name, "mock");
 assert.match(result.output, /Mock provider/);
+
+const chunks = [];
+for await (const event of streamTool({
+  toolId: "rewrite",
+  input: "hello world",
+  language: "en",
+  provider: { provider: "mock" }
+})) {
+  chunks.push(event);
+}
+
+assert.equal(chunks[0].type, "meta");
+assert.ok(chunks.some((event) => event.type === "chunk"), "expected streamed chunks");
+assert.equal(chunks.at(-1).type, "done");
 
 console.log("Smoke tests passed.");

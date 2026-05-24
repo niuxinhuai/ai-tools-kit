@@ -1,0 +1,7 @@
+services:
+  ai-tools-kit:
+    build: .
+    ports:
+      - "5177:5177"
+    env_file:
+      - .env

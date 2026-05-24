@@ -111,6 +111,11 @@ input:focus {
   padding-right: 2px;
 }
 
+.panel-tools {
+  display: flex;
+  gap: 8px;
+}
+
 .tool-card {
   display: grid;
   grid-template-columns: 36px 1fr;
@@ -206,7 +211,9 @@ input:focus {
 }
 
 #copyButton,
-#sampleButton {
+#sampleButton,
+#fileButton,
+#clearHistoryButton {
   height: 34px;
   padding: 0 12px;
   border: 1px solid var(--line);
@@ -251,7 +258,7 @@ select,
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 16px;
-  min-height: calc(100vh - 210px);
+  min-height: calc(100vh - 290px);
 }
 
 .panel {
@@ -323,6 +330,63 @@ select,
 #runButton:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+.history-section {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: var(--shadow);
+}
+
+.history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 50px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.history-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.history-list {
+  display: grid;
+  gap: 8px;
+  max-height: 240px;
+  overflow: auto;
+  padding: 12px;
+}
+
+.history-empty {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.history-item {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text);
+  text-align: left;
+}
+
+.history-item strong {
+  font-size: 13px;
+}
+
+.history-item span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 @media (max-width: 960px) {

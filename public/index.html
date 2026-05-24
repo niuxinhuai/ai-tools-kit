@@ -13,12 +13,12 @@
           <div class="brand-mark">AI</div>
           <div>
             <h1>AI Tools Kit</h1>
-            <p>Web + CLI bilingual AI tools</p>
+            <p data-i18n="tagline">Web + CLI bilingual AI tools</p>
           </div>
         </div>
 
         <div class="search-wrap">
-          <input id="searchInput" type="search" placeholder="搜索工具 / Search tools" autocomplete="off" />
+          <input id="searchInput" type="search" autocomplete="off" />
         </div>
 
         <nav id="toolList" class="tool-list" aria-label="AI tools"></nav>
@@ -32,26 +32,26 @@
           </div>
           <div class="status">
             <span id="providerBadge">mock</span>
-            <button id="copyButton" type="button" title="Copy result">Copy</button>
+            <button id="copyButton" type="button">Copy</button>
           </div>
         </header>
 
         <section class="config-panel" aria-label="Run settings">
           <label>
-            Language
+            <span data-i18n="language">Language</span>
             <select id="languageSelect"></select>
           </label>
           <label>
-            Mode
+            <span data-i18n="mode">Mode</span>
             <select id="optionSelect"></select>
           </label>
           <label>
-            Provider
+            <span data-i18n="provider">Provider</span>
             <select id="providerSelect"></select>
           </label>
           <label>
-            Model
-            <input id="modelInput" type="text" placeholder="Use provider default" />
+            <span data-i18n="model">Model</span>
+            <input id="modelInput" type="text" />
           </label>
         </section>
 
@@ -59,7 +59,11 @@
           <div class="panel input-panel">
             <div class="panel-head">
               <label id="inputLabel" for="inputText">Input</label>
-              <button id="sampleButton" type="button">Sample</button>
+              <div class="panel-tools">
+                <input id="fileInput" type="file" accept=".txt,.md,.json,.csv,.log,.js,.ts,.tsx,.jsx,.html,.css" hidden />
+                <button id="fileButton" type="button">Import</button>
+                <button id="sampleButton" type="button">Sample</button>
+              </div>
             </div>
             <textarea id="inputText" spellcheck="false"></textarea>
             <div class="actions">
@@ -70,11 +74,19 @@
 
           <div class="panel output-panel">
             <div class="panel-head">
-              <span>Output</span>
+              <span data-i18n="output">Output</span>
               <span id="runMeta">Ready</span>
             </div>
             <pre id="outputText">Choose a tool, paste your input, then run it.</pre>
           </div>
+        </section>
+
+        <section class="history-section" aria-label="History">
+          <div class="history-head">
+            <h3 data-i18n="history">History</h3>
+            <button id="clearHistoryButton" type="button">Clear</button>
+          </div>
+          <div id="historyList" class="history-list"></div>
         </section>
       </section>
     </main>

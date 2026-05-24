@@ -10,6 +10,8 @@ A practical bilingual AI toolbox that works as both a web app and a CLI. It is d
 - Chinese, English, and bilingual output modes.
 - Shared tool definitions for web and CLI.
 - Provider support for OpenAI, OpenAI-compatible APIs, DeepSeek, Qwen, Doubao, Moonshot, Gemini, Anthropic, Ollama, and local mock mode.
+- Streaming output in the web app for OpenAI-compatible providers and Ollama.
+- Text file import and local browser history for recent runs.
 - No build step required.
 
 ## Quick Start
@@ -76,6 +78,17 @@ Ollama local setup:
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
 AI_MODEL=llama3.1
+```
+
+## Deployment
+
+See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md).
+
+Docker quick start:
+
+```bash
+cp .env.example .env
+docker compose up --build
 ```
 
 ## Project Structure

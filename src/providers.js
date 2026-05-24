@@ -122,6 +122,33 @@ export async function generateText({ prompt, provider, temperature = 0.4 }) {
   throw new Error(`Unsupported provider type: ${resolved.type}`);
 }
 
+export async function* generateTextStream({ prompt, provider, temperature = 0.4 }) {
+  const resolved = resolveProvider(provider);
+
+  if (resolved.type === "mock") {
+    yield* streamText(mockResponse(prompt, resolved), 34);
+    return;
+  }
+  if (resolved.type !== "ollama" && !resolved.apiKey) {
+    throw new Error(`Missing API key for provider "${resolved.name}". Check .env.example for the expected variable.`);
+  }
+  if (resolved.type === "openai-compatible" && !resolved.baseUrl) {
+    throw new Error(`Missing base URL for provider "${resolved.name}". Set ${resolved.name.toUpperCase()}_BASE_URL or AI_BASE_URL.`);
+  }
+
+  if (resolved.type === "openai-compatible") {
+    yield* requestOpenAICompatibleStream({ prompt, provider: resolved, temperature });
+    return;
+  }
+  if (resolved.type === "ollama") {
+    yield* requestOllamaStream({ prompt, provider: resolved, temperature });
+    return;
+  }
+
+  const output = await generateText({ prompt, provider: resolved, temperature });
+  yield output;
+}
+
 async function requestOpenAICompatible({ prompt, provider, temperature }) {
   const response = await fetch(`${trimSlash(provider.baseUrl)}/chat/completions`, {
     method: "POST",
@@ -140,6 +167,57 @@ async function requestOpenAICompatible({ prompt, provider, temperature }) {
   });
   const data = await readJson(response);
   return data.choices?.[0]?.message?.content?.trim() || "";
+}
+
+async function* requestOpenAICompatibleStream({ prompt, provider, temperature }) {
+  const response = await fetch(`${trimSlash(provider.baseUrl)}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${provider.apiKey}`
+    },
+    body: JSON.stringify({
+      model: provider.model,
+      temperature,
+      stream: true,
+      messages: [
+        { role: "system", content: "You are a helpful AI assistant." },
+        { role: "user", content: prompt }
+      ]
+    })
+  });
+
+  if (!response.ok || !response.body) {
+    const data = await readJson(response);
+    throw new Error(data.error?.message || data.message || response.statusText);
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for await (const chunk of response.body) {
+    buffer += decoder.decode(chunk, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith("data:")) {
+        continue;
+      }
+      const data = trimmed.slice(5).trim();
+      if (data === "[DONE]") {
+        return;
+      }
+      try {
+        const parsed = JSON.parse(data);
+        const delta = parsed.choices?.[0]?.delta?.content;
+        if (delta) {
+          yield delta;
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
 }
 
 async function requestGemini({ prompt, provider, temperature }) {
@@ -190,6 +268,44 @@ async function requestOllama({ prompt, provider, temperature }) {
   return data.response?.trim() || "";
 }
 
+async function* requestOllamaStream({ prompt, provider, temperature }) {
+  const response = await fetch(`${trimSlash(provider.baseUrl)}/api/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: provider.model,
+      prompt,
+      stream: true,
+      options: { temperature }
+    })
+  });
+
+  if (!response.ok || !response.body) {
+    const data = await readJson(response);
+    throw new Error(data.error || data.message || response.statusText);
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for await (const chunk of response.body) {
+    buffer += decoder.decode(chunk, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+    for (const line of lines) {
+      if (!line.trim()) {
+        continue;
+      }
+      const data = JSON.parse(line);
+      if (data.response) {
+        yield data.response;
+      }
+      if (data.done) {
+        return;
+      }
+    }
+  }
+}
+
 async function readJson(response) {
   const text = await response.text();
   let data;
@@ -214,6 +330,13 @@ function mockResponse(prompt, provider) {
     "",
     `Prompt preview: ${preview}${prompt.length > 180 ? "..." : ""}`
   ].join("\n");
+}
+
+async function* streamText(text, chunkSize) {
+  for (let index = 0; index < text.length; index += chunkSize) {
+    yield text.slice(index, index + chunkSize);
+    await new Promise((resolve) => setTimeout(resolve, 12));
+  }
 }
 
 function normalizeProvider(value) {
