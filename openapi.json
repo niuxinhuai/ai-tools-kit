@@ -86,6 +86,24 @@
         }
       }
     },
+    "/api/prompt-debug": {
+      "post": {
+        "summary": "Build prompt debug metadata without calling a provider",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RunRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Prompt debug response" },
+          "401": { "description": "Unauthorized when API token is enabled" }
+        }
+      }
+    },
     "/api/run": {
       "post": {
         "summary": "Run a tool and return a full response",

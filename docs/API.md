@@ -54,6 +54,16 @@ curl -s http://localhost:5177/api/prompt \
   -d '{"toolId":"email-reply","input":"Thanks","variables":{"audience":"customer","goal":"confirm next step"}}'
 ```
 
+## `POST /api/prompt-debug`
+
+Returns the system instructions, custom template, resolved variables, rendered tool prompt, and final prompt without calling a provider.
+
+```bash
+curl -s http://localhost:5177/api/prompt-debug \
+  -H 'Content-Type: application/json' \
+  -d '{"toolId":"rewrite","input":"hello","option":"polish","language":"en"}'
+```
+
 ## `POST /api/run`
 
 Runs a tool and returns the full result after the provider completes.

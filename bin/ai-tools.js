@@ -10,7 +10,7 @@ import { loadEnv } from "../src/env.js";
 import { expandFilePatterns, formatResult, outputFileName } from "../src/files.js";
 import { runChunkedTool, runTool, runWorkflow } from "../src/run.js";
 import { installTemplate, listTemplates } from "../src/templates.js";
-import { buildToolPrompt, getCustomToolsFilePath, tools, validateCustomTools } from "../src/tools.js";
+import { buildPromptDebug, buildToolPrompt, getCustomToolsFilePath, tools, validateCustomTools } from "../src/tools.js";
 import { diagnoseProvider, listProviders } from "../src/providers.js";
 
 loadEnv();
@@ -128,6 +128,18 @@ try {
     } else {
       console.log(result.output);
     }
+    process.exit(0);
+  }
+
+  if (args.debugPrompt) {
+    const input = await resolveInput(args);
+    console.log(JSON.stringify(buildPromptDebug({
+      toolId: args.tool || "rewrite",
+      input,
+      option: args.option,
+      language: args.lang || args.language || "zh",
+      variables: readVariables(args)
+    }), null, 2));
     process.exit(0);
   }
 
@@ -560,6 +572,7 @@ Usage:
   ai-tools --test-provider --provider mock
   ai-tools --validate-tools
   ai-tools --tool rewrite --input "Draft this" --print-prompt
+  ai-tools --tool email-reply --input "Thanks" --debug-prompt --var audience=customer
   ai-tools --tool email-reply --input "Thanks" --var audience=customer --var tone=friendly
   ai-tools --tool rewrite --input "Make this better" --lang en
   cat notes.md | ai-tools --tool summarize --option structured --lang zh
@@ -610,6 +623,7 @@ Options:
   --install-template <name|path> Install a template into tools/custom.json or --custom-tools.
   --merge-template     Merge template tools into the target custom tools file.
   --print-prompt       Print the final prompt without calling a provider.
+  --debug-prompt       Print prompt debug JSON without calling a provider.
   --fail-fast          Stop batch mode at the first failed file.
   --json               Print full JSON result.
 `);

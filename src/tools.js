@@ -277,18 +277,37 @@ export function validateCustomTools(filePath = getCustomToolsFilePath()) {
 }
 
 export function buildToolPrompt({ toolId, input, option, language = "zh", variables = {} }) {
+  return buildPromptDebug({ toolId, input, option, language, variables }).prompt;
+}
+
+export function buildPromptDebug({ toolId, input, option, language = "zh", variables = {} }) {
   const tool = getTool(toolId);
   if (!tool) {
     throw new Error(`Unknown tool: ${toolId}`);
   }
+  const selectedOption = option || tool.options[0].value;
   const selectedLanguage = languages[language] ?? languages.zh;
-  return [
+  const system = [
     "You are an expert AI productivity assistant.",
     "Be accurate, practical, concise, and directly useful.",
-    selectedLanguage.instruction,
+    selectedLanguage.instruction
+  ];
+  const toolPrompt = tool.buildPrompt({ input, option: selectedOption, language, variables });
+  const prompt = [
+    ...system,
     "",
-    tool.buildPrompt({ input, option: option || tool.options[0].value, language, variables })
+    toolPrompt
   ].join("\n");
+  return {
+    toolId,
+    option: selectedOption,
+    language: languages[language] ? language : "zh",
+    system,
+    template: tool.getPromptTemplate?.(),
+    variables: debugVariables(tool, variables),
+    toolPrompt,
+    prompt
+  };
 }
 
 function loadCustomTools() {
@@ -320,6 +339,7 @@ function normalizeCustomTool(item) {
     options,
     variables,
     custom: true,
+    getPromptTemplate: () => promptTemplate,
     buildPrompt: ({ input, option, language, variables: values }) => renderPromptTemplate(promptTemplate, {
       input,
       option: option || options[0].value,
@@ -398,6 +418,24 @@ function resolveVariableValues(variables, values) {
     resolved[variable.name] = value;
     return resolved;
   }, {});
+}
+
+function debugVariables(tool, values) {
+  if (!tool.variables?.length) {
+    return undefined;
+  }
+  return Object.fromEntries(
+    tool.variables.map((variable) => {
+      const raw = values?.[variable.name];
+      const value = raw === undefined || raw === null || raw === "" ? variable.default : raw;
+      return [variable.name, {
+        value,
+        default: variable.default,
+        required: variable.required,
+        type: variable.type
+      }];
+    })
+  );
 }
 
 function extractTemplateVariables(template) {

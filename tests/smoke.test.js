@@ -5,7 +5,7 @@ import path from "node:path";
 import { cacheKey } from "../src/cache.js";
 import { expandFilePatterns, formatResult } from "../src/files.js";
 import { runChunkedTool, runTool, runWorkflow, streamTool } from "../src/run.js";
-import { buildToolPrompt, tools, validateCustomTools } from "../src/tools.js";
+import { buildPromptDebug, buildToolPrompt, tools, validateCustomTools } from "../src/tools.js";
 import { listProviders } from "../src/providers.js";
 
 assert.ok(tools.length >= 5, "expected at least five tools");
@@ -57,6 +57,14 @@ assert.match(buildToolPrompt({
   input: "hello",
   language: "en"
 }), /Rewrite the following content/);
+const promptDebug = buildPromptDebug({
+  toolId: "rewrite",
+  input: "hello",
+  language: "en"
+});
+assert.match(promptDebug.prompt, /Rewrite the following content/);
+assert.match(promptDebug.toolPrompt, /Content:/);
+assert.equal(promptDebug.system.length, 3);
 
 const validation = validateCustomTools("tools/custom.example.json");
 assert.equal(validation.ok, true);

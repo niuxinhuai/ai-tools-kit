@@ -24,6 +24,7 @@ const ui = {
     copied: "已复制",
     import: "导入",
     prompt: "Prompt",
+    debug: "调试",
     sample: "示例",
     run: "运行工具",
     running: "生成中",
@@ -59,6 +60,7 @@ const ui = {
     copied: "Copied",
     import: "Import",
     prompt: "Prompt",
+    debug: "Debug",
     sample: "Sample",
     run: "Run Tool",
     running: "Running",
@@ -124,6 +126,7 @@ const elements = {
   runButton: document.querySelector("#runButton"),
   sampleButton: document.querySelector("#sampleButton"),
   promptButton: document.querySelector("#promptButton"),
+  debugButton: document.querySelector("#debugButton"),
   fileButton: document.querySelector("#fileButton"),
   fileInput: document.querySelector("#fileInput"),
   copyButton: document.querySelector("#copyButton"),
@@ -173,6 +176,7 @@ function bindEvents() {
   elements.fileButton.addEventListener("click", () => elements.fileInput.click());
   elements.fileInput.addEventListener("change", importFile);
   elements.promptButton.addEventListener("click", previewPrompt);
+  elements.debugButton.addEventListener("click", debugPrompt);
   elements.runButton.addEventListener("click", runActiveTool);
   elements.clearHistoryButton.addEventListener("click", () => {
     state.history = [];
@@ -208,6 +212,7 @@ function applyLocale() {
   elements.copyButton.textContent = t("copy");
   elements.fileButton.textContent = t("import");
   elements.promptButton.textContent = t("prompt");
+  elements.debugButton.textContent = t("debug");
   elements.sampleButton.textContent = t("sample");
   elements.runButton.textContent = t("run");
   elements.clearHistoryButton.textContent = t("clear");
@@ -418,6 +423,29 @@ async function previewPrompt() {
     });
     elements.outputText.textContent = result.prompt;
     elements.runMeta.textContent = "Prompt preview";
+  } catch (error) {
+    elements.outputText.textContent = error.message;
+    elements.runMeta.textContent = t("failed");
+  }
+}
+
+async function debugPrompt() {
+  const input = elements.inputText.value;
+  elements.runMeta.textContent = t("generating");
+  try {
+    const result = await fetchJson("/api/prompt-debug", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        toolId: state.activeToolId,
+        input,
+        option: elements.optionSelect.value,
+        language: elements.languageSelect.value,
+        variables: collectVariables()
+      })
+    });
+    elements.outputText.textContent = JSON.stringify(result, null, 2);
+    elements.runMeta.textContent = "Prompt debug";
   } catch (error) {
     elements.outputText.textContent = error.message;
     elements.runMeta.textContent = t("failed");

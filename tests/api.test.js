@@ -47,6 +47,18 @@ try {
   });
   assert.match(prompt.prompt, /Rewrite the following content/);
 
+  const debug = await fetchJson("/api/prompt-debug", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ toolId: "rewrite", input: "hello", language: "en" })
+  });
+  assert.match(debug.prompt, /Rewrite the following content/);
+  assert.match(debug.toolPrompt, /Content:/);
+  assert.equal(debug.system.length, 3);
+
   const run = await fetchJson("/api/run", {
     method: "POST",
     headers: {

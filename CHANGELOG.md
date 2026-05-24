@@ -2,6 +2,12 @@
 
 ## 2026-05-24
 
+### feat: Add prompt debug mode
+
+- Added shared prompt debug metadata with system instructions, templates, variables, rendered tool prompt, and final prompt.
+- Added CLI `--debug-prompt`, API `/api/prompt-debug`, and a web Debug button.
+- Updated OpenAPI, API docs, README examples, and tests.
+
 ### feat: Add custom tool template installer
 
 - Added `--templates` to list reusable custom tool templates.

@@ -96,6 +96,16 @@ const variablePrompt = await runCli([
 ], { AI_TOOLS_CUSTOM_FILE: customToolsFile }, configDir);
 assert.match(variablePrompt.stdout, /Write for operators in a focused tone/);
 
+const debugPrompt = await runCli([
+  "--tool", "variable-test",
+  "--input", "Launch note",
+  "--debug-prompt"
+], { AI_TOOLS_CUSTOM_FILE: customToolsFile }, configDir);
+const debugPayload = JSON.parse(debugPrompt.stdout);
+assert.equal(debugPayload.template, "Write for {{audience}} in a {{tone}} tone.\n\n{{input}}");
+assert.equal(debugPayload.variables.audience.value, "operators");
+assert.match(debugPayload.toolPrompt, /Write for operators in a focused tone/);
+
 const batch = await runCli([
   "--tool", "summarize",
   "--files", sourceFile,

@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadEnv } from "../src/env.js";
 import { runTool, streamTool } from "../src/run.js";
-import { buildToolPrompt, languages, tools, validateCustomTools } from "../src/tools.js";
+import { buildPromptDebug, buildToolPrompt, languages, tools, validateCustomTools } from "../src/tools.js";
 import { diagnoseProvider, listProviders, resolveProvider } from "../src/providers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -88,6 +88,18 @@ const server = http.createServer(async (request, response) => {
         variables: payload.variables
       });
       return sendJson(response, { prompt });
+    }
+
+    if (request.method === "POST" && request.url === "/api/prompt-debug") {
+      const payload = await readBody(request);
+      const debug = buildPromptDebug({
+        toolId: payload.toolId,
+        input: payload.input || "",
+        option: payload.option,
+        language: payload.language,
+        variables: payload.variables
+      });
+      return sendJson(response, debug);
     }
 
     if (request.method === "POST" && request.url === "/api/run-stream") {

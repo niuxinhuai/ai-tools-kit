@@ -84,6 +84,14 @@ Variable fields support:
 
 If a prompt uses a custom placeholder that is not declared in `variables`, AI Tools Kit will infer a simple text field automatically.
 
+To inspect template replacement without calling a provider:
+
+```bash
+ai-tools --tool email-reply --input "Thanks" --debug-prompt --var audience=customer
+```
+
+The web app also includes a `Debug` button next to `Prompt`.
+
 ## Custom Location
 
 ```bash

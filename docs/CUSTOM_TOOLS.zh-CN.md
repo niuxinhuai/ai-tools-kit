@@ -84,6 +84,14 @@ ai-tools --tool email-reply --input "感谢更新" --var audience=customer --var
 
 如果 Prompt 中使用了未声明的自定义占位符，AI Tools Kit 会自动推断成普通文本输入框。
 
+如果想在不调用模型的情况下检查模板替换结果：
+
+```bash
+ai-tools --tool email-reply --input "感谢更新" --debug-prompt --var audience=customer
+```
+
+网页端的 `Prompt` 旁边也有 `Debug` 按钮。
+
 ## 自定义文件位置
 
 ```bash

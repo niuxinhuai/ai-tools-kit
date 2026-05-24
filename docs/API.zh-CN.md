@@ -54,6 +54,16 @@ curl -s http://localhost:5177/api/prompt \
   -d '{"toolId":"email-reply","input":"感谢更新","variables":{"audience":"customer","goal":"确认下一步"}}'
 ```
 
+## `POST /api/prompt-debug`
+
+返回系统指令、自定义模板、变量解析结果、渲染后的工具 Prompt 和最终 Prompt，但不会调用模型。
+
+```bash
+curl -s http://localhost:5177/api/prompt-debug \
+  -H 'Content-Type: application/json' \
+  -d '{"toolId":"rewrite","input":"hello","option":"polish","language":"en"}'
+```
+
 ## `POST /api/run`
 
 运行工具，等待 Provider 完成后一次性返回结果。

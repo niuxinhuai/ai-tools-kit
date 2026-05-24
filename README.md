@@ -25,6 +25,7 @@ npm run cli -- --tool summarize --files "docs/*.md" --format jsonl --retries 2
 npm run cli -- --templates
 npm run cli -- --install-template developer-tools --merge-template
 npm run cli -- --tool email-reply --input "Thanks" --var audience=customer --var goal="confirm next step"
+npm run cli -- --tool email-reply --input "Thanks" --debug-prompt --var audience=customer
 npm run cli -- --init-config
 npm run cli -- --workflow workflows/content-pipeline.json --file notes.md --provider mock
 npm run cli -- --doctor --provider deepseek
@@ -42,7 +43,7 @@ AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
 - Project-level CLI defaults through `.ai-tools-kit.json`.
 - Custom tools through `tools/custom.json`, with reusable templates in `tools/templates/`.
 - CLI template installer for reusable custom tool packs.
-- Prompt variables for custom tools, with auto-generated web forms and CLI `--var` support.
+- Prompt variables and prompt debugging for custom tools, with auto-generated web forms and CLI `--var` support.
 - Local HTTP API, OpenAPI spec, optional API token protection, Docker support, and npm publishing metadata.
 
 ## Built-In Tools
