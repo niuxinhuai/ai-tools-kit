@@ -374,6 +374,7 @@ select,
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   min-height: 50px;
   padding: 0 16px;
   border-bottom: 1px solid var(--line);
@@ -382,6 +383,18 @@ select,
 .history-head h3 {
   margin: 0;
   font-size: 15px;
+}
+
+.history-controls {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 150px auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.history-controls input,
+.history-controls select {
+  height: 34px;
 }
 
 .history-list {
@@ -399,7 +412,8 @@ select,
 
 .history-item {
   display: grid;
-  gap: 5px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
   width: 100%;
   padding: 11px 12px;
   border: 1px solid var(--line);
@@ -409,11 +423,39 @@ select,
   text-align: left;
 }
 
+.history-main {
+  min-width: 0;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.history-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.history-actions button {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+}
+
 .history-item strong {
+  display: block;
   font-size: 13px;
 }
 
 .history-item span {
+  display: block;
+  margin-top: 5px;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.35;
@@ -451,6 +493,12 @@ select,
 
   .topbar {
     flex-direction: column;
+  }
+
+  .history-head,
+  .history-controls {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
   .topbar h2 {

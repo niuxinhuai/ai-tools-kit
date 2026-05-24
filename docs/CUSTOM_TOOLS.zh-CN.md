@@ -57,3 +57,25 @@ AI_TOOLS_CUSTOM_FILE=/absolute/path/my-tools.json npm start
 ```
 
 CLI 也会读取同一个变量。
+
+## 模板库
+
+可复用模板位于 `tools/templates/`。
+
+示例：
+
+- `tools/templates/product-and-content.json`：PRD 摘要、竞品分析、短视频脚本。
+- `tools/templates/developer-tools.json`：SQL 解释、提交信息、Bug 报告。
+
+使用模板：
+
+```bash
+cp tools/templates/developer-tools.json tools/custom.json
+npm start
+```
+
+也可以直接指定模板文件：
+
+```bash
+AI_TOOLS_CUSTOM_FILE=tools/templates/product-and-content.json npm start
+```

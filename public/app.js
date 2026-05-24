@@ -32,7 +32,11 @@ const ui = {
     ready: "就绪",
     output: "输出",
     history: "历史记录",
+    historySearch: "搜索历史",
+    allTools: "全部工具",
     clear: "清空",
+    delete: "删除",
+    rerun: "重跑",
     emptyInput: "请先输入内容。",
     emptyOutput: "选择一个工具，粘贴内容，然后运行。",
     emptyHistory: "还没有历史记录。",
@@ -63,7 +67,11 @@ const ui = {
     ready: "Ready",
     output: "Output",
     history: "History",
+    historySearch: "Search history",
+    allTools: "All tools",
     clear: "Clear",
+    delete: "Delete",
+    rerun: "Rerun",
     emptyInput: "Please enter some text first.",
     emptyOutput: "Choose a tool, paste your input, then run it.",
     emptyHistory: "No history yet.",
@@ -121,6 +129,8 @@ const elements = {
   charCount: document.querySelector("#charCount"),
   runMeta: document.querySelector("#runMeta"),
   clearHistoryButton: document.querySelector("#clearHistoryButton"),
+  historySearchInput: document.querySelector("#historySearchInput"),
+  historyToolSelect: document.querySelector("#historyToolSelect"),
   historyList: document.querySelector("#historyList"),
   exportButtons: document.querySelectorAll("[data-export]")
 };
@@ -168,6 +178,8 @@ function bindEvents() {
     saveHistory();
     renderHistory();
   });
+  elements.historySearchInput.addEventListener("input", renderHistory);
+  elements.historyToolSelect.addEventListener("change", renderHistory);
   elements.exportButtons.forEach((button) => {
     button.addEventListener("click", () => exportOutput(button.dataset.export));
   });
@@ -198,6 +210,7 @@ function applyLocale() {
   elements.sampleButton.textContent = t("sample");
   elements.runButton.textContent = t("run");
   elements.clearHistoryButton.textContent = t("clear");
+  elements.historySearchInput.placeholder = t("historySearch");
   if (elements.outputText.textContent === "Choose a tool, paste your input, then run it." || elements.outputText.textContent === "选择一个工具，粘贴内容，然后运行。") {
     elements.outputText.textContent = t("emptyOutput");
   }
@@ -206,6 +219,7 @@ function applyLocale() {
   }
   updateCharCount();
   renderProviderNotice();
+  renderHistoryFilters();
 }
 
 function renderControls() {
@@ -216,6 +230,15 @@ function renderControls() {
   elements.providerSelect.innerHTML = state.providers
     .map((provider) => `<option value="${provider}">${provider}</option>`)
     .join("");
+}
+
+function renderHistoryFilters() {
+  const current = elements.historyToolSelect.value || "all";
+  elements.historyToolSelect.innerHTML = [
+    `<option value="all">${escapeHtml(t("allTools"))}</option>`,
+    ...state.tools.map((tool) => `<option value="${tool.id}">${escapeHtml(tool.title[state.locale] || tool.title.en)}</option>`)
+  ].join("");
+  elements.historyToolSelect.value = current;
 }
 
 function renderProviderNotice() {
@@ -397,7 +420,7 @@ async function previewPrompt() {
 }
 
 function addHistory(item) {
-  state.history = [item, ...state.history].slice(0, 12);
+  state.history = [{ id: historyId(), ...item }, ...state.history].slice(0, 24);
   saveHistory();
   renderHistory();
 }
@@ -471,31 +494,68 @@ function exportMime(format) {
 }
 
 function renderHistory() {
-  if (!state.history.length) {
+  const query = elements.historySearchInput.value.trim().toLowerCase();
+  const selectedTool = elements.historyToolSelect.value || "all";
+  const items = state.history.filter((item) => {
+    const matchesTool = selectedTool === "all" || item.toolId === selectedTool;
+    const text = [item.toolId, item.input, item.output, item.provider].join(" ").toLowerCase();
+    return matchesTool && text.includes(query);
+  });
+
+  if (!items.length) {
     elements.historyList.innerHTML = `<span class="history-empty">${escapeHtml(t("emptyHistory"))}</span>`;
     return;
   }
-  elements.historyList.innerHTML = state.history
+  elements.historyList.innerHTML = items
     .map((item, index) => {
       const tool = state.tools.find((entry) => entry.id === item.toolId);
       const title = tool?.title[state.locale] || tool?.title.en || item.toolId;
       const preview = item.output.replace(/\s+/g, " ").slice(0, 150);
-      return `<button class="history-item" data-history-index="${index}" type="button">
-        <strong>${escapeHtml(title)} · ${escapeHtml(item.provider)}</strong>
-        <span>${escapeHtml(preview)}${item.output.length > 150 ? "..." : ""}</span>
-      </button>`;
+      return `<div class="history-item" data-history-id="${item.id || index}">
+        <button class="history-main" data-history-action="restore" type="button">
+          <strong>${escapeHtml(title)} · ${escapeHtml(item.provider)}</strong>
+          <span>${escapeHtml(preview)}${item.output.length > 150 ? "..." : ""}</span>
+        </button>
+        <div class="history-actions">
+          <button data-history-action="rerun" type="button">${escapeHtml(t("rerun"))}</button>
+          <button data-history-action="copy" type="button">${escapeHtml(t("copy"))}</button>
+          <button data-history-action="export" type="button">MD</button>
+          <button data-history-action="delete" type="button">${escapeHtml(t("delete"))}</button>
+        </div>
+      </div>`;
     })
     .join("");
-  elements.historyList.querySelectorAll("[data-history-index]").forEach((button) => {
-    button.addEventListener("click", () => restoreHistory(Number(button.dataset.historyIndex)));
+  elements.historyList.querySelectorAll("[data-history-action]").forEach((button) => {
+    button.addEventListener("click", () => handleHistoryAction(button.closest("[data-history-id]")?.dataset.historyId, button.dataset.historyAction));
   });
 }
 
-function restoreHistory(index) {
-  const item = state.history[index];
+function handleHistoryAction(id, action) {
+  const item = findHistoryItem(id);
   if (!item) {
     return;
   }
+  if (action === "restore") {
+    restoreHistory(item);
+  } else if (action === "rerun") {
+    restoreHistory(item);
+    runActiveTool();
+  } else if (action === "copy") {
+    navigator.clipboard.writeText(item.output);
+  } else if (action === "export") {
+    downloadHistoryItem(item);
+  } else if (action === "delete") {
+    state.history = state.history.filter((entry) => String(entry.id) !== String(id));
+    saveHistory();
+    renderHistory();
+  }
+}
+
+function findHistoryItem(id) {
+  return state.history.find((item, index) => String(item.id || index) === String(id));
+}
+
+function restoreHistory(item) {
   selectTool(item.toolId);
   elements.optionSelect.value = item.option;
   elements.inputText.value = item.input;
@@ -504,9 +564,31 @@ function restoreHistory(index) {
   updateCharCount();
 }
 
+function downloadHistoryItem(item) {
+  const tool = state.tools.find((entry) => entry.id === item.toolId);
+  const payload = {
+    toolId: item.toolId,
+    tool: tool?.title[state.locale] || item.toolId,
+    option: item.option,
+    language: state.language,
+    provider: { name: item.provider },
+    input: item.input,
+    output: item.output,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([formatExport(payload, "md")], { type: exportMime("md") });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `${item.toolId}-${Date.now()}.md`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 function loadHistory() {
   try {
-    return JSON.parse(localStorage.getItem("ai-tools-history") || "[]");
+    return JSON.parse(localStorage.getItem("ai-tools-history") || "[]")
+      .map((item) => item.id ? item : { id: historyId(), ...item });
   } catch {
     return [];
   }
@@ -514,6 +596,10 @@ function loadHistory() {
 
 function saveHistory() {
   localStorage.setItem("ai-tools-history", JSON.stringify(state.history));
+}
+
+function historyId() {
+  return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function updateCharCount() {

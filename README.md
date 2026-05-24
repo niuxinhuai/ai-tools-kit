@@ -19,6 +19,9 @@ A practical bilingual AI toolbox that works as both a web app and a CLI. It is d
 - Local HTTP API for automation and scripting.
 - Optional API token protection for self-hosted deployments.
 - npm publish metadata and GitHub issue/PR templates.
+- Opt-in CLI cache for repeated prompts.
+- Enhanced web history search, filtering, item export, delete, copy, and rerun.
+- Custom tool template library and OpenAPI spec.
 - No build step required.
 
 ## Quick Start
@@ -50,6 +53,7 @@ npm run cli -- --test-provider --provider mock
 npm run cli -- --init --yes --with-api-token
 npm run cli -- --validate-tools
 npm run cli -- --tool rewrite --input "Draft this" --print-prompt
+AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
 ```
 
 If installed globally or linked locally:
@@ -114,9 +118,12 @@ cp tools/custom.example.json tools/custom.json
 npm start
 ```
 
+Template examples are available in `tools/templates/`.
+
 ## API and Security
 
 - API docs: [docs/API.md](./docs/API.md)
+- OpenAPI spec: [openapi.json](./openapi.json)
 - Security notes: [docs/SECURITY.md](./docs/SECURITY.md)
 
 ## Project Structure

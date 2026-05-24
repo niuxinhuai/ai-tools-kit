@@ -98,7 +98,11 @@
         <section class="history-section" aria-label="History">
           <div class="history-head">
             <h3 data-i18n="history">History</h3>
-            <button id="clearHistoryButton" type="button">Clear</button>
+            <div class="history-controls">
+              <input id="historySearchInput" type="search" />
+              <select id="historyToolSelect"></select>
+              <button id="clearHistoryButton" type="button">Clear</button>
+            </div>
           </div>
           <div id="historyList" class="history-list"></div>
         </section>

@@ -2,6 +2,13 @@
 
 ## 2026-05-24
 
+### feat: Add cache, history controls, templates, and OpenAPI
+
+- Added opt-in CLI cache with `--cache`, `--cache-file`, and `--clear-cache`.
+- Enhanced web history with search, tool filtering, item copy, export, delete, and rerun.
+- Added reusable custom tool templates under `tools/templates/`.
+- Added `openapi.json` and served it at `/openapi.json`.
+
 ### feat: Prepare publishing and self-hosted protection
 
 - Added optional `AI_TOOLS_API_TOKEN` protection for provider-calling endpoints.

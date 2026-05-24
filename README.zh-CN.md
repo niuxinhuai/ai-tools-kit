@@ -19,6 +19,9 @@ English docs: [README.md](./README.md).
 - 提供本地 HTTP API，方便自动化脚本调用。
 - 支持自托管场景下的可选 API Token 鉴权。
 - 补齐 npm 发布元数据和 GitHub Issue / PR 模板。
+- CLI 支持显式开启本地缓存，减少重复调用。
+- 网页历史记录支持搜索、筛选、单条导出、删除、复制和重跑。
+- 增加自定义工具模板库和 OpenAPI 规范。
 - 零运行依赖，不需要构建步骤。
 
 ## 快速开始
@@ -50,6 +53,7 @@ npm run cli -- --test-provider --provider mock
 npm run cli -- --init --yes --with-api-token
 npm run cli -- --validate-tools
 npm run cli -- --tool rewrite --input "帮我改写" --print-prompt
+AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
 ```
 
 如果全局安装或本地 link：
@@ -114,9 +118,12 @@ cp tools/custom.example.json tools/custom.json
 npm start
 ```
 
+模板示例在 `tools/templates/` 目录。
+
 ## API 与安全
 
 - API 文档：[docs/API.zh-CN.md](./docs/API.zh-CN.md)
+- OpenAPI 规范：[openapi.json](./openapi.json)
 - 安全说明：[docs/SECURITY.zh-CN.md](./docs/SECURITY.zh-CN.md)
 
 ## 项目结构

@@ -1,0 +1,123 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Tools Kit API",
+    "version": "0.1.0",
+    "description": "Local/self-hosted API for running AI Tools Kit tools."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5177"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Required when AI_TOOLS_API_TOKEN is set."
+      }
+    },
+    "schemas": {
+      "ProviderOverride": {
+        "type": "object",
+        "properties": {
+          "provider": { "type": "string" },
+          "model": { "type": "string" },
+          "baseUrl": { "type": "string" },
+          "apiKey": { "type": "string" }
+        }
+      },
+      "RunRequest": {
+        "type": "object",
+        "required": ["toolId", "input"],
+        "properties": {
+          "toolId": { "type": "string" },
+          "input": { "type": "string" },
+          "option": { "type": "string" },
+          "language": { "type": "string", "enum": ["zh", "en", "bilingual"] },
+          "provider": { "$ref": "#/components/schemas/ProviderOverride" },
+          "temperature": { "type": "number" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Get runtime health and diagnostics",
+        "responses": {
+          "200": {
+            "description": "Health response"
+          }
+        }
+      }
+    },
+    "/api/meta": {
+      "get": {
+        "summary": "Get tools, languages, and providers",
+        "responses": {
+          "200": {
+            "description": "Metadata response"
+          }
+        }
+      }
+    },
+    "/api/prompt": {
+      "post": {
+        "summary": "Build final prompt without calling a provider",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RunRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Prompt response" },
+          "401": { "description": "Unauthorized when API token is enabled" }
+        }
+      }
+    },
+    "/api/run": {
+      "post": {
+        "summary": "Run a tool and return a full response",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RunRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Tool result" },
+          "401": { "description": "Unauthorized when API token is enabled" }
+        }
+      }
+    },
+    "/api/run-stream": {
+      "post": {
+        "summary": "Run a tool and stream Server-Sent Events",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RunRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE stream with meta, chunk, done, and error events"
+          },
+          "401": { "description": "Unauthorized when API token is enabled" }
+        }
+      }
+    }
+  }
+}

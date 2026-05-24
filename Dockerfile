@@ -10,6 +10,7 @@ COPY server ./server
 COPY src ./src
 COPY tests ./tests
 COPY tools ./tools
+COPY openapi.json ./
 COPY README.md README.zh-CN.md LICENSE ./
 
 ENV NODE_ENV=production

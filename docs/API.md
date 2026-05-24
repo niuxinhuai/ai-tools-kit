@@ -2,6 +2,12 @@
 
 AI Tools Kit exposes a small local HTTP API from the same Node server that serves the web app.
 
+OpenAPI spec: [`openapi.json`](../openapi.json). When the server is running, it is also available at:
+
+```text
+http://localhost:5177/openapi.json
+```
+
 ## Authentication
 
 If `AI_TOOLS_API_TOKEN` is set, protected API calls require:

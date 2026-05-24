@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { cacheKey } from "../src/cache.js";
 import { expandFilePatterns, formatResult } from "../src/files.js";
 import { runTool, streamTool } from "../src/run.js";
 import { buildToolPrompt, tools, validateCustomTools } from "../src/tools.js";
@@ -51,5 +52,10 @@ assert.match(buildToolPrompt({
 const validation = validateCustomTools("tools/custom.example.json");
 assert.equal(validation.ok, true);
 assert.equal(validation.count, 1);
+assert.equal(validateCustomTools("tools/templates/product-and-content.json").ok, true);
+assert.equal(validateCustomTools("tools/templates/developer-tools.json").ok, true);
+const openApi = JSON.parse(await fs.readFile("openapi.json", "utf8"));
+assert.equal(openApi.openapi, "3.1.0");
+assert.equal(cacheKey({ toolId: "rewrite" }).length, 64);
 
 console.log("Smoke tests passed.");

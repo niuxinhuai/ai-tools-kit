@@ -57,3 +57,25 @@ AI_TOOLS_CUSTOM_FILE=/absolute/path/my-tools.json npm start
 ```
 
 The CLI uses the same variable.
+
+## Template Library
+
+Reusable templates live in `tools/templates/`.
+
+Examples:
+
+- `tools/templates/product-and-content.json`: PRD summaries, competitor analysis, short video scripts.
+- `tools/templates/developer-tools.json`: SQL explanation, commit messages, bug reports.
+
+To use a template:
+
+```bash
+cp tools/templates/developer-tools.json tools/custom.json
+npm start
+```
+
+You can also point to a template directly:
+
+```bash
+AI_TOOLS_CUSTOM_FILE=tools/templates/product-and-content.json npm start
+```

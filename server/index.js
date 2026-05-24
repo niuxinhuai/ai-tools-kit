@@ -62,6 +62,16 @@ const server = http.createServer(async (request, response) => {
       });
     }
 
+    if (request.method === "GET" && request.url === "/openapi.json") {
+      const content = await fs.readFile(path.join(rootDir, "openapi.json"));
+      response.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store"
+      });
+      response.end(content);
+      return;
+    }
+
     if (request.method === "POST" && request.url === "/api/run") {
       const payload = await readBody(request);
       const result = await runTool(payload);

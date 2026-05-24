@@ -1,0 +1,82 @@
+{
+  "tools": [
+    {
+      "id": "sql-explain",
+      "icon": "code",
+      "category": "Developer",
+      "title": {
+        "zh": "SQL 解释器",
+        "en": "SQL Explainer"
+      },
+      "description": {
+        "zh": "解释 SQL 查询逻辑、性能风险和索引建议。",
+        "en": "Explain SQL logic, performance risks, and index ideas."
+      },
+      "inputLabel": {
+        "zh": "SQL",
+        "en": "SQL"
+      },
+      "placeholder": {
+        "zh": "粘贴 SQL 查询...",
+        "en": "Paste a SQL query..."
+      },
+      "options": [
+        { "value": "explain", "zh": "解释", "en": "Explain" },
+        { "value": "optimize", "zh": "优化", "en": "Optimize" }
+      ],
+      "promptTemplate": "Analyze this SQL in {{option}} mode. Explain what it does, complexity, indexes that may help, risks, and safer alternatives.\n\nSQL:\n{{input}}"
+    },
+    {
+      "id": "commit-message",
+      "icon": "pen",
+      "category": "Developer",
+      "title": {
+        "zh": "提交信息生成器",
+        "en": "Commit Message Writer"
+      },
+      "description": {
+        "zh": "根据 diff 或变更说明生成清晰的 Git commit message。",
+        "en": "Generate clear Git commit messages from diffs or change notes."
+      },
+      "inputLabel": {
+        "zh": "Diff 或变更说明",
+        "en": "Diff or change notes"
+      },
+      "placeholder": {
+        "zh": "粘贴 git diff 或变更要点...",
+        "en": "Paste a git diff or change notes..."
+      },
+      "options": [
+        { "value": "conventional", "zh": "Conventional", "en": "Conventional" },
+        { "value": "chinese", "zh": "中文", "en": "Chinese" }
+      ],
+      "promptTemplate": "Write a {{option}} Git commit message. Include a concise title and 2-4 bullet details when useful. Return only the commit message.\n\nChanges:\n{{input}}"
+    },
+    {
+      "id": "bug-report",
+      "icon": "sparkles",
+      "category": "Developer",
+      "title": {
+        "zh": "Bug 报告生成器",
+        "en": "Bug Report Writer"
+      },
+      "description": {
+        "zh": "把零散问题描述整理成可复现、可处理的 Bug 报告。",
+        "en": "Turn rough notes into a reproducible, actionable bug report."
+      },
+      "inputLabel": {
+        "zh": "问题描述",
+        "en": "Bug notes"
+      },
+      "placeholder": {
+        "zh": "粘贴现象、日志、截图描述、复现步骤...",
+        "en": "Paste symptoms, logs, screenshot notes, and repro steps..."
+      },
+      "options": [
+        { "value": "github", "zh": "GitHub Issue", "en": "GitHub Issue" },
+        { "value": "qa", "zh": "QA 报告", "en": "QA Report" }
+      ],
+      "promptTemplate": "Create a {{option}} bug report. Include summary, environment, steps to reproduce, actual result, expected result, logs, severity, and suspected cause if available.\n\nNotes:\n{{input}}"
+    }
+  ]
+}

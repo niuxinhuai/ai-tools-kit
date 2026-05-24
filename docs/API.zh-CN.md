@@ -2,6 +2,12 @@
 
 AI Tools Kit 的 Node 服务同时提供网页和本地 HTTP API。
 
+OpenAPI 规范：[openapi.json](../openapi.json)。服务启动后也可以访问：
+
+```text
+http://localhost:5177/openapi.json
+```
+
 ## 鉴权
 
 如果设置了 `AI_TOOLS_API_TOKEN`，受保护 API 需要携带：

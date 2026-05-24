@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import readline from "node:readline/promises";
+import { cacheKey, clearCache, defaultCachePath, readCache, shouldUseCache, writeCache } from "../src/cache.js";
 import { loadEnv } from "../src/env.js";
 import { expandFilePatterns, formatResult, outputFileName } from "../src/files.js";
 import { runTool } from "../src/run.js";
@@ -25,6 +26,12 @@ if (args.list) {
 
 if (args.providers) {
   console.log(listProviders().join("\n"));
+  process.exit(0);
+}
+
+if (args.clearCache) {
+  await clearCache(args.cacheFile || defaultCachePath());
+  console.log(`Cleared cache: ${args.cacheFile || defaultCachePath()}`);
   process.exit(0);
 }
 
@@ -83,7 +90,7 @@ try {
   }
 
   const input = await resolveInput(args);
-  const result = await runTool({
+  const result = await runToolMaybeCached({
     toolId: args.tool || "rewrite",
     input,
     option: args.option,
@@ -95,7 +102,7 @@ try {
       apiKey: args.apiKey
     },
     temperature: args.temperature
-  });
+  }, args);
 
   if (args.json) {
     console.log(JSON.stringify(result, null, 2));
@@ -189,7 +196,7 @@ async function runBatch(options) {
   for (const file of files) {
     try {
       const input = await fs.readFile(file, "utf8");
-      const result = await runTool({
+      const result = await runToolMaybeCached({
         toolId: options.tool || "summarize",
         input,
         option: options.option,
@@ -201,7 +208,7 @@ async function runBatch(options) {
           apiKey: options.apiKey
         },
         temperature: options.temperature
-      });
+      }, options);
       results.push({ file, ...result });
 
       if (options.out) {
@@ -236,6 +243,39 @@ async function runBatch(options) {
     process.exitCode = 1;
   }
   return summary;
+}
+
+async function runToolMaybeCached(payload, options) {
+  if (!shouldUseCache(options)) {
+    return runTool(payload);
+  }
+
+  const filePath = options.cacheFile || defaultCachePath();
+  const cache = await readCache(filePath);
+  const key = cacheKey({
+    toolId: payload.toolId,
+    input: payload.input,
+    option: payload.option,
+    language: payload.language,
+    provider: payload.provider?.provider,
+    model: payload.provider?.model,
+    baseUrl: payload.provider?.baseUrl,
+    temperature: payload.temperature
+  });
+
+  if (cache[key]) {
+    console.error(`Cache hit: ${key.slice(0, 12)}`);
+    return cache[key].result;
+  }
+
+  const result = await runTool(payload);
+  cache[key] = {
+    createdAt: new Date().toISOString(),
+    result
+  };
+  await writeCache(cache, filePath);
+  console.error(`Cache stored: ${key.slice(0, 12)}`);
+  return result;
 }
 
 async function resolveInput(options) {
@@ -331,6 +371,7 @@ Usage:
   cat notes.md | ai-tools --tool summarize --option structured --lang zh
   ai-tools --tool code-explain --file ./snippet.js --provider ollama --model llama3.1
   ai-tools --tool summarize --files "docs/*.md" --out summaries --format md
+  AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
 
 Options:
   --tool <id>          Tool id. Defaults to rewrite.
@@ -352,6 +393,10 @@ Options:
   --yes                Use defaults for --init.
   --force              Overwrite existing env file during --init.
   --test-provider      Send a tiny request to verify the current provider works.
+  --cache              Cache CLI results locally.
+  --no-cache           Disable cache even when AI_TOOLS_CACHE=1.
+  --cache-file <path>  Cache file path. Defaults to ~/.ai-tools-kit/cache.json.
+  --clear-cache        Clear the cache file.
   --doctor             Print provider configuration diagnostics.
   --validate-tools     Validate tools/custom.json or --custom-tools.
   --custom-tools <path>

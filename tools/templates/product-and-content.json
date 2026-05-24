@@ -1,0 +1,82 @@
+{
+  "tools": [
+    {
+      "id": "prd-summary",
+      "icon": "sparkles",
+      "category": "Product",
+      "title": {
+        "zh": "PRD 摘要器",
+        "en": "PRD Summarizer"
+      },
+      "description": {
+        "zh": "把产品需求文档整理成目标、范围、流程、风险和待确认问题。",
+        "en": "Turn product requirements into goals, scope, flows, risks, and open questions."
+      },
+      "inputLabel": {
+        "zh": "PRD 内容",
+        "en": "PRD content"
+      },
+      "placeholder": {
+        "zh": "粘贴 PRD 或产品说明...",
+        "en": "Paste product requirements..."
+      },
+      "options": [
+        { "value": "brief", "zh": "简版", "en": "Brief" },
+        { "value": "detailed", "zh": "详细", "en": "Detailed" }
+      ],
+      "promptTemplate": "Summarize this PRD in {{option}} mode. Include goal, users, scope, key flows, edge cases, risks, metrics, and open questions.\n\nPRD:\n{{input}}"
+    },
+    {
+      "id": "competitor-analysis",
+      "icon": "bulb",
+      "category": "Product",
+      "title": {
+        "zh": "竞品分析助手",
+        "en": "Competitor Analyst"
+      },
+      "description": {
+        "zh": "从竞品描述或截图笔记中提炼定位、功能、差异点和机会。",
+        "en": "Extract positioning, features, differences, and opportunities from competitor notes."
+      },
+      "inputLabel": {
+        "zh": "竞品信息",
+        "en": "Competitor notes"
+      },
+      "placeholder": {
+        "zh": "粘贴竞品页面、功能说明或观察笔记...",
+        "en": "Paste competitor pages, feature notes, or observations..."
+      },
+      "options": [
+        { "value": "product", "zh": "产品视角", "en": "Product" },
+        { "value": "marketing", "zh": "营销视角", "en": "Marketing" }
+      ],
+      "promptTemplate": "Analyze the competitor from a {{option}} perspective. Return positioning, target users, feature strengths, weaknesses, differentiation, and actionable opportunities.\n\nNotes:\n{{input}}"
+    },
+    {
+      "id": "short-video-script",
+      "icon": "megaphone",
+      "category": "Content",
+      "title": {
+        "zh": "短视频脚本",
+        "en": "Short Video Script"
+      },
+      "description": {
+        "zh": "根据主题生成短视频口播脚本、镜头节奏和标题。",
+        "en": "Generate short-form video narration, scene beats, and titles."
+      },
+      "inputLabel": {
+        "zh": "主题和素材",
+        "en": "Topic and material"
+      },
+      "placeholder": {
+        "zh": "粘贴主题、卖点、受众或素材...",
+        "en": "Paste topic, selling points, audience, or raw material..."
+      },
+      "options": [
+        { "value": "educational", "zh": "知识型", "en": "Educational" },
+        { "value": "conversion", "zh": "转化型", "en": "Conversion" }
+      ],
+      "promptTemplate": "Create a {{option}} short video script. Include 5 title options, a 3-second hook, narration, scene beats, captions, and a soft CTA.\n\nMaterial:\n{{input}}"
+    }
+  ]
+}
