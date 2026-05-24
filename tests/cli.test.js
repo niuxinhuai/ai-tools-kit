@@ -84,6 +84,30 @@ const batch = await runCli([
 assert.match(batch.stderr, /Batch summary: 1\/1 succeeded/);
 assert.match(await fs.readFile(path.join(outDir, "note.txt"), "utf8"), /Mock provider/);
 
+const jsonlBatch = await runCli([
+  "--tool", "summarize",
+  "--files", sourceFile,
+  "--format", "jsonl",
+  "--provider", "mock",
+  "--lang", "en"
+]);
+const jsonlRows = jsonlBatch.stdout.trim().split("\n").map((line) => JSON.parse(line));
+assert.equal(jsonlRows.length, 1);
+assert.equal(jsonlRows[0].file, sourceFile);
+assert.equal(jsonlRows[0].attempts, 1);
+assert.match(jsonlRows[0].output, /Mock provider/);
+
+const retryFailure = await runCliAllowFailure([
+  "--tool", "missing-tool",
+  "--files", sourceFile,
+  "--format", "jsonl",
+  "--provider", "mock",
+  "--retries", "2"
+]);
+assert.equal(retryFailure.code, 1);
+assert.match(retryFailure.stderr, /attempt 1\/3/);
+assert.match(retryFailure.stderr, /after 3 attempt\(s\)/);
+
 const cacheFile = path.join(tempDir, "cache.json");
 await runCli(["--tool", "rewrite", "--input", "cache", "--provider", "mock", "--cache", "--cache-file", cacheFile]);
 const cached = await runCli(["--tool", "rewrite", "--input", "cache", "--provider", "mock", "--cache", "--cache-file", cacheFile]);
@@ -108,4 +132,17 @@ async function runCli(args, env = {}, cwd = process.cwd()) {
       ...env
     }
   });
+}
+
+async function runCliAllowFailure(args, env = {}, cwd = process.cwd()) {
+  try {
+    const result = await runCli(args, env, cwd);
+    return { code: 0, ...result };
+  } catch (error) {
+    return {
+      code: error.code,
+      stdout: error.stdout || "",
+      stderr: error.stderr || ""
+    };
+  }
 }

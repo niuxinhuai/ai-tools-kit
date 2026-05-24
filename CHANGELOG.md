@@ -2,6 +2,12 @@
 
 ## 2026-05-24
 
+### feat: Add batch retries and JSONL output
+
+- Added `--retries` for failed batch items.
+- Added `--format jsonl` for script-friendly batch output.
+- Updated config support, README examples, and CLI tests.
+
 ### feat: Add project-level CLI config
 
 - Added `.ai-tools-kit.json` discovery, `--config`, `--no-config`, and `--init-config`.

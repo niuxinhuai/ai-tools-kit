@@ -84,6 +84,7 @@ export function sampleProjectConfig() {
     variables: {
       audience: "developers"
     },
+    retries: 0,
     cache: false
   };
 }
@@ -111,6 +112,7 @@ function configKeys() {
     "cacheFile",
     "format",
     "out",
+    "retries",
     "chunkSize",
     "chunkOverlap",
     "mergeFiles",

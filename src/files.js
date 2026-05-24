@@ -21,6 +21,9 @@ export function formatResult(result, format = "md") {
   if (format === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;
   }
+  if (format === "jsonl") {
+    return `${JSON.stringify(result)}\n`;
+  }
   if (format === "txt") {
     return `${result.output}\n`;
   }

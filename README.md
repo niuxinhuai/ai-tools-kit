@@ -21,6 +21,7 @@ Open <http://localhost:5177>. Use `AI_PROVIDER=mock` when you want to try everyt
 npm run cli -- --list
 npm run cli -- --tool rewrite --input "Make this sentence better." --lang en --provider mock
 npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
+npm run cli -- --tool summarize --files "docs/*.md" --format jsonl --retries 2
 npm run cli -- --tool email-reply --input "Thanks" --var audience=customer --var goal="confirm next step"
 npm run cli -- --init-config
 npm run cli -- --workflow workflows/content-pipeline.json --file notes.md --provider mock
@@ -35,7 +36,7 @@ AI_TOOLS_CACHE=1 ai-tools --tool summarize --file notes.md
 - Built-in tools for rewriting, summarizing, prompt building, code explanation, reports, translation, social posts, and ideation.
 - Provider support for OpenAI, OpenAI-compatible APIs, DeepSeek, Qwen, Doubao, Moonshot, Gemini, Anthropic, Ollama, and mock mode.
 - Streaming web output, file import, result export, prompt preview, and enhanced local history.
-- Batch CLI, merged multi-file input, long-input chunking, local cache, workflows, and provider fallback.
+- Batch CLI, JSONL output, failed-item retries, merged multi-file input, long-input chunking, local cache, workflows, and provider fallback.
 - Project-level CLI defaults through `.ai-tools-kit.json`.
 - Custom tools through `tools/custom.json`, with reusable templates in `tools/templates/`.
 - Prompt variables for custom tools, with auto-generated web forms and CLI `--var` support.

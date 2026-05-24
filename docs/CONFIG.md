@@ -22,6 +22,7 @@ This creates:
   "variables": {
     "audience": "developers"
   },
+  "retries": 0,
   "cache": false
 }
 ```
@@ -53,6 +54,6 @@ Project config can define defaults for:
 - `variables`
 - `cache`, `noCache`, `cacheFile`
 - `format`, `out`
-- `chunkSize`, `chunkOverlap`, `mergeFiles`, `failFast`
+- `retries`, `chunkSize`, `chunkOverlap`, `mergeFiles`, `failFast`
 
 Do not commit real API keys in config files. Prefer `.env` or shell environment variables for secrets.

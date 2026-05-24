@@ -250,6 +250,7 @@ async function runBatch(options) {
   }
 
   const format = options.format || (options.json ? "json" : "md");
+  const retries = normalizeRetries(options.retries);
   const results = [];
   const failures = [];
   if (options.out) {
@@ -259,20 +260,24 @@ async function runBatch(options) {
   for (const file of files) {
     try {
       const input = await fs.readFile(file, "utf8");
-      const result = await runToolMaybeCached(buildRunPayload(options, input, options.tool || "summarize"), options);
-      results.push({ file, ...result });
+      const result = await runWithRetries(() => runToolMaybeCached(buildRunPayload(options, input, options.tool || "summarize"), options), {
+        retries,
+        label: file
+      });
+      const item = { file, attempts: result.attempts, ...result.value };
+      results.push(item);
 
       if (options.out) {
-        const extension = format === "json" ? "json" : format === "txt" ? "txt" : "md";
+        const extension = format === "json" ? "json" : format === "jsonl" ? "jsonl" : format === "txt" ? "txt" : "md";
         const outputPath = path.join(options.out, outputFileName(file, extension));
-        await fs.writeFile(outputPath, formatResult({ file, ...result }, format), "utf8");
+        await fs.writeFile(outputPath, formatResult(item, format), "utf8");
         console.error(`Wrote ${outputPath}`);
       } else {
-        console.log(formatResult({ file, ...result }, format));
+        process.stdout.write(formatResult(item, format));
       }
     } catch (error) {
-      failures.push({ file, error: error.message });
-      console.error(`Failed ${file}: ${error.message}`);
+      failures.push({ file, error: error.message, attempts: retries + 1 });
+      console.error(`Failed ${file} after ${retries + 1} attempt(s): ${error.message}`);
       if (options.failFast) {
         break;
       }
@@ -383,6 +388,34 @@ function buildRunPayload(options, input, defaultTool) {
     fallbackProviders: options.fallbackProviders,
     variables: readVariables(options)
   };
+}
+
+async function runWithRetries(task, { retries = 0, label = "task" } = {}) {
+  let lastError;
+  const attempts = retries + 1;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const value = await task();
+      if (attempt > 1) {
+        console.error(`Succeeded ${label} on attempt ${attempt}/${attempts}`);
+      }
+      return { value, attempts: attempt };
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        console.error(`Retrying ${label} after attempt ${attempt}/${attempts}: ${error.message}`);
+      }
+    }
+  }
+  throw lastError;
+}
+
+function normalizeRetries(value) {
+  const retries = Number(value || 0);
+  if (!Number.isFinite(retries) || retries < 0) {
+    throw new Error("--retries must be a non-negative number.");
+  }
+  return Math.floor(retries);
 }
 
 function workflowMarkdown(workflow, result) {
@@ -523,7 +556,7 @@ Options:
   --chunk-overlap <chars>
   --workflow <path>    Run a linear workflow JSON file.
   --out <dir>          Write batch results to a directory.
-  --format <md|txt|json>
+  --format <md|txt|json|jsonl>
   --lang <zh|en|bilingual>
   --config <path>      Read project defaults from a JSON file. Defaults to nearest .ai-tools-kit.json.
   --no-config          Disable project config lookup.
@@ -533,6 +566,7 @@ Options:
   --api-key <key>      Override provider API key.
   --fallback-providers <names> Comma-separated providers to try if the primary provider fails.
   --var <key=value>    Set custom tool template variables. Can be repeated.
+  --retries <num>      Retry failed batch items. Defaults to 0.
   --temperature <num>  Defaults to 0.4.
   --init               Create a .env file. Use --yes for defaults and --force to overwrite.
   --init-config        Create a .ai-tools-kit.json project config file.

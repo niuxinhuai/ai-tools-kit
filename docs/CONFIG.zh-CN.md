@@ -22,6 +22,7 @@ ai-tools --init-config
   "variables": {
     "audience": "developers"
   },
+  "retries": 0,
   "cache": false
 }
 ```
@@ -53,6 +54,6 @@ ai-tools --no-config --tool rewrite --input "忽略本地配置"
 - `variables`
 - `cache`、`noCache`、`cacheFile`
 - `format`、`out`
-- `chunkSize`、`chunkOverlap`、`mergeFiles`、`failFast`
+- `retries`、`chunkSize`、`chunkOverlap`、`mergeFiles`、`failFast`
 
 不要把真实 API Key 提交到配置文件里。密钥更适合放在 `.env` 或 shell 环境变量中。
