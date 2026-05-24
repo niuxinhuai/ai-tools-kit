@@ -24,6 +24,32 @@ const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "ai-tools-cli-"));
 const sourceFile = path.join(tempDir, "note.md");
 const outDir = path.join(tempDir, "out");
 await fs.writeFile(sourceFile, "CLI batch test", "utf8");
+const customToolsFile = path.join(tempDir, "custom.json");
+await fs.writeFile(customToolsFile, JSON.stringify({
+  tools: [
+    {
+      id: "variable-test",
+      title: "Variable Test",
+      description: "Variable prompt test",
+      inputLabel: "Input",
+      placeholder: "Input",
+      variables: [
+        { name: "audience", label: "Audience", required: true },
+        { name: "tone", label: "Tone", default: "direct" }
+      ],
+      promptTemplate: "Write for {{audience}} in a {{tone}} tone.\n\n{{input}}"
+    }
+  ]
+}), "utf8");
+
+const variablePrompt = await runCli([
+  "--tool", "variable-test",
+  "--input", "Launch note",
+  "--print-prompt",
+  "--var", "audience=developers",
+  "--var", "tone=warm"
+], { AI_TOOLS_CUSTOM_FILE: customToolsFile });
+assert.match(variablePrompt.stdout, /Write for developers in a warm tone/);
 
 const batch = await runCli([
   "--tool", "summarize",
@@ -51,12 +77,13 @@ assert.match(workflow.stdout, /Mock provider/);
 
 console.log("CLI tests passed.");
 
-async function runCli(args) {
+async function runCli(args, env = {}) {
   return exec("node", [bin, ...args], {
     cwd: process.cwd(),
     env: {
       ...process.env,
-      AI_PROVIDER: "mock"
+      AI_PROVIDER: "mock",
+      ...env
     }
   });
 }

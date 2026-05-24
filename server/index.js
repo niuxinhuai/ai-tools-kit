@@ -84,7 +84,8 @@ const server = http.createServer(async (request, response) => {
         toolId: payload.toolId,
         input: payload.input || "",
         option: payload.option,
-        language: payload.language
+        language: payload.language,
+        variables: payload.variables
       });
       return sendJson(response, { prompt });
     }

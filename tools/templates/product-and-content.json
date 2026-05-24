@@ -76,7 +76,25 @@
         { "value": "educational", "zh": "知识型", "en": "Educational" },
         { "value": "conversion", "zh": "转化型", "en": "Conversion" }
       ],
-      "promptTemplate": "Create a {{option}} short video script. Include 5 title options, a 3-second hook, narration, scene beats, captions, and a soft CTA.\n\nMaterial:\n{{input}}"
+      "variables": [
+        {
+          "name": "platform",
+          "label": { "zh": "平台", "en": "Platform" },
+          "type": "select",
+          "default": "xiaohongshu",
+          "options": [
+            { "value": "xiaohongshu", "zh": "小红书", "en": "Xiaohongshu" },
+            { "value": "douyin", "zh": "抖音", "en": "Douyin" },
+            { "value": "youtube-shorts", "zh": "YouTube Shorts", "en": "YouTube Shorts" }
+          ]
+        },
+        {
+          "name": "audience",
+          "label": { "zh": "受众", "en": "Audience" },
+          "placeholder": { "zh": "例如：独立开发者", "en": "Example: indie developers" }
+        }
+      ],
+      "promptTemplate": "Create a {{option}} short video script for {{platform}}. Target audience: {{audience}}. Include 5 title options, a 3-second hook, narration, scene beats, captions, and a soft CTA.\n\nMaterial:\n{{input}}"
     }
   ]
 }

@@ -46,6 +46,14 @@ curl -s http://localhost:5177/api/prompt \
   -d '{"toolId":"rewrite","input":"hello","option":"polish","language":"en"}'
 ```
 
+Custom tool variables can be sent with `variables`:
+
+```bash
+curl -s http://localhost:5177/api/prompt \
+  -H 'Content-Type: application/json' \
+  -d '{"toolId":"email-reply","input":"Thanks","variables":{"audience":"customer","goal":"confirm next step"}}'
+```
+
 ## `POST /api/run`
 
 Runs a tool and returns the full result after the provider completes.
@@ -81,6 +89,7 @@ Event types:
 | `input` | string | User input. |
 | `option` | string | Optional tool mode. Defaults to the first mode. |
 | `language` | string | `zh`, `en`, or `bilingual`. |
+| `variables` | object | Custom tool template variables, such as `{ "audience": "customer" }`. |
 | `provider.provider` | string | Provider name, such as `openai`, `deepseek`, `ollama`, or `mock`. |
 | `provider.model` | string | Optional model override. |
 | `provider.baseUrl` | string | Optional base URL override. |

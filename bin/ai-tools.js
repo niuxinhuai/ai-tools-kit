@@ -89,7 +89,8 @@ try {
       toolId: args.tool || "rewrite",
       input,
       option: args.option,
-      language: args.lang || args.language || "zh"
+      language: args.lang || args.language || "zh",
+      variables: parseVariables(args.var)
     }));
     process.exit(0);
   }
@@ -142,7 +143,8 @@ async function runWorkflowCommand(options) {
     },
     language: options.lang || options.language || workflow.language || "zh",
     temperature: options.temperature ?? workflow.temperature,
-    fallbackProviders: options.fallbackProviders || workflow.fallbackProviders
+    fallbackProviders: options.fallbackProviders || workflow.fallbackProviders,
+    variables: { ...(workflow.variables || {}), ...parseVariables(options.var) }
   });
 
   if (options.out) {
@@ -285,6 +287,7 @@ async function runToolMaybeCached(payload, options) {
     baseUrl: payload.provider?.baseUrl,
     temperature: payload.temperature,
     fallbackProviders: payload.fallbackProviders,
+    variables: payload.variables,
     chunkSize: options.chunkSize,
     chunkOverlap: options.chunkOverlap
   });
@@ -351,7 +354,8 @@ function buildRunPayload(options, input, defaultTool) {
       apiKey: options.apiKey
     },
     temperature: options.temperature,
-    fallbackProviders: options.fallbackProviders
+    fallbackProviders: options.fallbackProviders,
+    variables: parseVariables(options.var)
   };
 }
 
@@ -409,6 +413,23 @@ function flattenValues(value) {
   return values.flatMap((item) => String(item).split(",")).map((item) => item.trim()).filter(Boolean);
 }
 
+function parseVariables(value) {
+  const entries = Array.isArray(value) ? value : value ? [value] : [];
+  return entries.reduce((variables, entry) => {
+    const equalsIndex = entry.indexOf("=");
+    if (equalsIndex <= 0) {
+      throw new Error(`Invalid --var "${entry}". Use --var key=value.`);
+    }
+    const key = entry.slice(0, equalsIndex).trim();
+    const itemValue = entry.slice(equalsIndex + 1);
+    if (!/^[A-Za-z_][\w-]*$/.test(key)) {
+      throw new Error(`Invalid variable name "${key}".`);
+    }
+    variables[key] = itemValue;
+    return variables;
+  }, {});
+}
+
 async function ask(rl, question, defaultValue) {
   if (!rl) {
     return defaultValue;
@@ -448,6 +469,7 @@ Usage:
   ai-tools --test-provider --provider mock
   ai-tools --validate-tools
   ai-tools --tool rewrite --input "Draft this" --print-prompt
+  ai-tools --tool email-reply --input "Thanks" --var audience=customer --var tone=friendly
   ai-tools --tool rewrite --input "Make this better" --lang en
   cat notes.md | ai-tools --tool summarize --option structured --lang zh
   ai-tools --tool code-explain --file ./snippet.js --provider ollama --model llama3.1
@@ -474,6 +496,7 @@ Options:
   --base-url <url>     Override provider base URL.
   --api-key <key>      Override provider API key.
   --fallback-providers <names> Comma-separated providers to try if the primary provider fails.
+  --var <key=value>    Set custom tool template variables. Can be repeated.
   --temperature <num>  Defaults to 0.4.
   --init               Create a .env file. Use --yes for defaults and --force to overwrite.
   --env <path>         Env file path for --init. Defaults to .env.

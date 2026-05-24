@@ -246,6 +246,29 @@ export function validateCustomTools(filePath = getCustomToolsFilePath()) {
     if (item?.options !== undefined && (!Array.isArray(item.options) || !item.options.length)) {
       result.errors.push(`${label} options must be a non-empty array when provided.`);
     }
+    if (item?.variables !== undefined) {
+      if (!Array.isArray(item.variables)) {
+        result.errors.push(`${label} variables must be an array when provided.`);
+      } else {
+        const variableNames = new Set();
+        item.variables.forEach((variable, variableIndex) => {
+          const variableLabel = `${label}.variables[${variableIndex}]`;
+          if (!variable?.name || !isValidVariableName(variable.name)) {
+            result.errors.push(`${variableLabel} must include a valid name.`);
+          } else if (variableNames.has(String(variable.name))) {
+            result.errors.push(`${variableLabel} name "${variable.name}" is duplicated.`);
+          } else {
+            variableNames.add(String(variable.name));
+          }
+          if (variable?.type && !["text", "textarea", "select"].includes(variable.type)) {
+            result.errors.push(`${variableLabel} type must be text, textarea, or select.`);
+          }
+          if (variable?.type === "select" && (!Array.isArray(variable.options) || !variable.options.length)) {
+            result.errors.push(`${variableLabel} select variables require non-empty options.`);
+          }
+        });
+      }
+    }
   });
 
   result.count = items.length;
@@ -253,7 +276,7 @@ export function validateCustomTools(filePath = getCustomToolsFilePath()) {
   return result;
 }
 
-export function buildToolPrompt({ toolId, input, option, language = "zh" }) {
+export function buildToolPrompt({ toolId, input, option, language = "zh", variables = {} }) {
   const tool = getTool(toolId);
   if (!tool) {
     throw new Error(`Unknown tool: ${toolId}`);
@@ -264,7 +287,7 @@ export function buildToolPrompt({ toolId, input, option, language = "zh" }) {
     "Be accurate, practical, concise, and directly useful.",
     selectedLanguage.instruction,
     "",
-    tool.buildPrompt({ input, option: option || tool.options[0].value })
+    tool.buildPrompt({ input, option: option || tool.options[0].value, language, variables })
   ].join("\n");
 }
 
@@ -284,6 +307,7 @@ function normalizeCustomTool(item) {
     ? item.options
     : [{ value: "default", zh: "默认", en: "Default" }];
   const promptTemplate = String(item.promptTemplate);
+  const variables = normalizeVariables(item.variables, promptTemplate);
 
   return {
     id: String(item.id),
@@ -294,10 +318,15 @@ function normalizeCustomTool(item) {
     inputLabel: normalizeLocaleText(item.inputLabel),
     placeholder: normalizeLocaleText(item.placeholder),
     options,
+    variables,
     custom: true,
-    buildPrompt: ({ input, option }) => promptTemplate
-      .replaceAll("{{input}}", input)
-      .replaceAll("{{option}}", option || options[0].value)
+    buildPrompt: ({ input, option, language, variables: values }) => renderPromptTemplate(promptTemplate, {
+      input,
+      option: option || options[0].value,
+      language,
+      variables,
+      values
+    })
   };
 }
 
@@ -309,4 +338,79 @@ function normalizeLocaleText(value) {
     zh: value.zh || value.en || "",
     en: value.en || value.zh || ""
   };
+}
+
+function normalizeVariables(variables, promptTemplate) {
+  const explicit = Array.isArray(variables) ? variables.map((variable) => normalizeVariable(variable)) : [];
+  const knownNames = new Set(explicit.map((variable) => variable.name));
+  const inferred = extractTemplateVariables(promptTemplate)
+    .filter((name) => !knownNames.has(name))
+    .map((name) => normalizeVariable({ name }));
+  return [...explicit, ...inferred];
+}
+
+function normalizeVariable(variable) {
+  const type = ["text", "textarea", "select"].includes(variable.type) ? variable.type : "text";
+  return {
+    name: String(variable.name),
+    label: normalizeLocaleText(variable.label || variable.name),
+    placeholder: normalizeLocaleText(variable.placeholder || ""),
+    default: variable.default === undefined ? "" : String(variable.default),
+    required: Boolean(variable.required),
+    type,
+    options: Array.isArray(variable.options) ? variable.options.map((option) => normalizeVariableOption(option)) : []
+  };
+}
+
+function normalizeVariableOption(option) {
+  if (typeof option === "string") {
+    return { value: option, zh: option, en: option };
+  }
+  return {
+    value: String(option.value),
+    zh: option.zh || option.en || String(option.value),
+    en: option.en || option.zh || String(option.value)
+  };
+}
+
+function renderPromptTemplate(template, { input, option, language, variables, values = {} }) {
+  const payload = {
+    input,
+    option,
+    language,
+    ...resolveVariableValues(variables, values)
+  };
+  return String(template).replace(/{{\s*([A-Za-z_][\w-]*)\s*}}/g, (match, name) => {
+    if (payload[name] === undefined) {
+      return match;
+    }
+    return String(payload[name]);
+  });
+}
+
+function resolveVariableValues(variables, values) {
+  return variables.reduce((resolved, variable) => {
+    const raw = values?.[variable.name];
+    const value = raw === undefined || raw === null || raw === "" ? variable.default : raw;
+    if (variable.required && String(value || "").trim() === "") {
+      throw new Error(`Variable "${variable.name}" is required.`);
+    }
+    resolved[variable.name] = value;
+    return resolved;
+  }, {});
+}
+
+function extractTemplateVariables(template) {
+  const reserved = new Set(["input", "option", "language"]);
+  const names = new Set();
+  for (const match of String(template).matchAll(/{{\s*([A-Za-z_][\w-]*)\s*}}/g)) {
+    if (!reserved.has(match[1])) {
+      names.add(match[1]);
+    }
+  }
+  return [...names];
+}
+
+function isValidVariableName(name) {
+  return /^[A-Za-z_][\w-]*$/.test(String(name));
 }

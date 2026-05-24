@@ -22,6 +22,9 @@ ai-tools --workflow workflows/content-pipeline.json --file notes.md --out workfl
   "language": "zh",
   "provider": "mock",
   "fallbackProviders": "openai,ollama",
+  "variables": {
+    "audience": "developers"
+  },
   "steps": [
     {
       "name": "Summarize source material",
@@ -31,11 +34,16 @@ ai-tools --workflow workflows/content-pipeline.json --file notes.md --out workfl
     {
       "name": "Create social post",
       "toolId": "social-post",
-      "option": "twitter"
+      "option": "twitter",
+      "variables": {
+        "tone": "practical"
+      }
     }
   ]
 }
 ```
+
+Top-level `variables` are passed to every step. Step-level `variables` override them for that step.
 
 ## Long Inputs
 

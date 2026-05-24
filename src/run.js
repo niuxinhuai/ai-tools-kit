@@ -1,7 +1,7 @@
 import { buildToolPrompt, getTool } from "./tools.js";
 import { generateText, generateTextStream, resolveProvider } from "./providers.js";
 
-export async function runTool({ toolId, input, option, language, provider, temperature, fallbackProviders }) {
+export async function runTool({ toolId, input, option, language, provider, temperature, fallbackProviders, variables }) {
   if (!input || !input.trim()) {
     throw new Error("Input is required.");
   }
@@ -14,7 +14,8 @@ export async function runTool({ toolId, input, option, language, provider, tempe
     toolId,
     input: input.trim(),
     option: selectedOption,
-    language
+    language,
+    variables
   });
   const attempts = providerAttempts(provider, fallbackProviders);
   let output = "";
@@ -48,12 +49,13 @@ export async function runTool({ toolId, input, option, language, provider, tempe
       name: resolvedProvider.name,
       model: resolvedProvider.model
     },
+    variables: normalizeResultVariables(tool, variables),
     fallbackUsed: resolvedProvider.name !== resolveProvider(provider).name,
     output
   };
 }
 
-export async function* streamTool({ toolId, input, option, language, provider, temperature }) {
+export async function* streamTool({ toolId, input, option, language, provider, temperature, variables }) {
   if (!input || !input.trim()) {
     throw new Error("Input is required.");
   }
@@ -66,7 +68,8 @@ export async function* streamTool({ toolId, input, option, language, provider, t
     toolId,
     input: input.trim(),
     option: selectedOption,
-    language
+    language,
+    variables
   });
   const resolvedProvider = resolveProvider(provider);
   yield {
@@ -77,7 +80,8 @@ export async function* streamTool({ toolId, input, option, language, provider, t
     provider: {
       name: resolvedProvider.name,
       model: resolvedProvider.model
-    }
+    },
+    variables: normalizeResultVariables(tool, variables)
   };
   for await (const chunk of generateTextStream({
     prompt,
@@ -125,7 +129,7 @@ export async function runChunkedTool({ input, chunkSize = 6000, chunkOverlap = 3
   };
 }
 
-export async function runWorkflow({ steps, input, provider, language, temperature, fallbackProviders }) {
+export async function runWorkflow({ steps, input, provider, language, temperature, fallbackProviders, variables }) {
   if (!Array.isArray(steps) || !steps.length) {
     throw new Error("Workflow must include a non-empty steps array.");
   }
@@ -141,7 +145,8 @@ export async function runWorkflow({ steps, input, provider, language, temperatur
       language: step.language || language,
       provider: step.provider || provider,
       temperature: step.temperature ?? temperature,
-      fallbackProviders: step.fallbackProviders || fallbackProviders
+      fallbackProviders: step.fallbackProviders || fallbackProviders,
+      variables: { ...(variables || {}), ...(step.variables || {}) }
     });
     results.push({
       index: index + 1,
@@ -179,4 +184,13 @@ function splitText(text, chunkSize, overlap) {
     chunks.push(text.slice(index, index + size));
   }
   return chunks;
+}
+
+function normalizeResultVariables(tool, variables) {
+  if (!tool.variables?.length) {
+    return undefined;
+  }
+  return Object.fromEntries(
+    tool.variables.map((variable) => [variable.name, variables?.[variable.name] ?? variable.default ?? ""])
+  );
 }

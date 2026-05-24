@@ -46,6 +46,14 @@ curl -s http://localhost:5177/api/prompt \
   -d '{"toolId":"rewrite","input":"hello","option":"polish","language":"en"}'
 ```
 
+自定义工具变量可以通过 `variables` 传入：
+
+```bash
+curl -s http://localhost:5177/api/prompt \
+  -H 'Content-Type: application/json' \
+  -d '{"toolId":"email-reply","input":"感谢更新","variables":{"audience":"customer","goal":"确认下一步"}}'
+```
+
 ## `POST /api/run`
 
 运行工具，等待 Provider 完成后一次性返回结果。
@@ -81,6 +89,7 @@ curl -N http://localhost:5177/api/run-stream \
 | `input` | string | 用户输入。 |
 | `option` | string | 可选工具模式，默认第一个模式。 |
 | `language` | string | `zh`、`en` 或 `bilingual`。 |
+| `variables` | object | 自定义工具模板变量，例如 `{ "audience": "customer" }`。 |
 | `provider.provider` | string | Provider 名称，如 `openai`、`deepseek`、`ollama`、`mock`。 |
 | `provider.model` | string | 可选模型覆盖。 |
 | `provider.baseUrl` | string | 可选 Base URL 覆盖。 |

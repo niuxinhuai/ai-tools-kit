@@ -24,7 +24,22 @@
         { "value": "friendly", "zh": "友好", "en": "Friendly" },
         { "value": "formal", "zh": "正式", "en": "Formal" }
       ],
-      "promptTemplate": "Write an email reply in a {{option}} tone. Preserve the user's intent, keep it concise, and return only the email body.\n\nMaterial:\n{{input}}"
+      "variables": [
+        {
+          "name": "audience",
+          "label": { "zh": "收件人", "en": "Audience" },
+          "placeholder": { "zh": "例如：客户、同事、老板", "en": "Example: customer, teammate, manager" },
+          "default": "customer",
+          "required": true
+        },
+        {
+          "name": "goal",
+          "label": { "zh": "回复目标", "en": "Reply goal" },
+          "placeholder": { "zh": "例如：确认时间、拒绝需求、推进下一步", "en": "Example: confirm timing, decline a request, move forward" },
+          "type": "textarea"
+        }
+      ],
+      "promptTemplate": "Write an email reply in a {{option}} tone for this audience: {{audience}}.\nReply goal:\n{{goal}}\n\nPreserve the user's intent, keep it concise, and return only the email body.\n\nMaterial:\n{{input}}"
     }
   ]
 }

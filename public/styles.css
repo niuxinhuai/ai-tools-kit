@@ -302,6 +302,10 @@ select,
   overflow: hidden;
 }
 
+.input-panel {
+  grid-template-rows: auto auto 1fr auto;
+}
+
 .panel-head,
 .actions {
   display: flex;
@@ -316,6 +320,56 @@ select,
 .actions {
   border-top: 1px solid var(--line);
   border-bottom: 0;
+}
+
+.variable-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+
+.variable-fields[hidden] {
+  display: none;
+}
+
+.variable-fields label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.variable-fields label.variable-wide {
+  grid-column: 1 / -1;
+}
+
+.variable-fields input,
+.variable-fields select,
+.variable-fields textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+
+.variable-fields input,
+.variable-fields select {
+  height: 38px;
+  padding: 0 10px;
+}
+
+.variable-fields textarea {
+  min-height: 82px;
+  resize: vertical;
+  padding: 10px;
+  line-height: 1.5;
 }
 
 #inputText {
@@ -496,7 +550,8 @@ select,
   }
 
   .history-head,
-  .history-controls {
+  .history-controls,
+  .variable-fields {
     grid-template-columns: 1fr;
     align-items: stretch;
   }

@@ -39,7 +39,21 @@ cp tools/custom.example.json tools/custom.json
       "options": [
         { "value": "friendly", "zh": "友好", "en": "Friendly" }
       ],
-      "promptTemplate": "Write an email reply in a {{option}} tone.\n\nMaterial:\n{{input}}"
+      "variables": [
+        {
+          "name": "audience",
+          "label": { "zh": "收件人", "en": "Audience" },
+          "placeholder": { "zh": "例如：客户", "en": "Example: customer" },
+          "default": "customer",
+          "required": true
+        },
+        {
+          "name": "goal",
+          "label": { "zh": "回复目标", "en": "Reply goal" },
+          "type": "textarea"
+        }
+      ],
+      "promptTemplate": "Write an email reply in a {{option}} tone for {{audience}}.\nReply goal: {{goal}}\n\nMaterial:\n{{input}}"
     }
   ]
 }
@@ -49,6 +63,26 @@ cp tools/custom.example.json tools/custom.json
 
 - `{{input}}`：用户输入。
 - `{{option}}`：当前选择的工具模式。
+- `{{language}}`：当前输出语言。
+- 自定义变量，例如 `{{audience}}`、`{{goal}}`。
+
+自定义变量可以通过 `variables` 声明。网页端会自动渲染对应表单，CLI 支持重复传入 `--var key=value`：
+
+```bash
+ai-tools --tool email-reply --input "感谢更新" --var audience=customer --var goal="确认下一步"
+```
+
+变量字段支持：
+
+- `name`：必填。支持字母、数字、`_`、`-`，且必须以字母或 `_` 开头。
+- `label`：双语标签或普通字符串。
+- `placeholder`：双语占位文案或普通字符串。
+- `default`：可选默认值。
+- `required`：设为 `true` 时不允许空值。
+- `type`：`text`、`textarea` 或 `select`。
+- `options`：`type` 为 `select` 时必填。
+
+如果 Prompt 中使用了未声明的自定义占位符，AI Tools Kit 会自动推断成普通文本输入框。
 
 ## 自定义文件位置
 

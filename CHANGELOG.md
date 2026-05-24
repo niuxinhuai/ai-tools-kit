@@ -2,6 +2,12 @@
 
 ## 2026-05-24
 
+### feat: Add prompt variables for custom tools
+
+- Added custom tool `variables` metadata and template replacement for placeholders such as `{{audience}}`.
+- Added CLI `--var key=value` support and web auto-generated variable fields.
+- Updated custom tool examples, docs, OpenAPI schema, and tests.
+
 ### test: Strengthen CI and README
 
 - Added dedicated CLI, API, and package dry-run tests.

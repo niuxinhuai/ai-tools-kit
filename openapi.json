@@ -36,6 +36,11 @@
           "input": { "type": "string" },
           "option": { "type": "string" },
           "language": { "type": "string", "enum": ["zh", "en", "bilingual"] },
+          "variables": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Custom tool template variables, for example {\"audience\":\"developers\"}."
+          },
           "provider": { "$ref": "#/components/schemas/ProviderOverride" },
           "temperature": { "type": "number" }
         }

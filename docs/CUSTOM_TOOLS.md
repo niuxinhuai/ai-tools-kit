@@ -39,7 +39,21 @@ cp tools/custom.example.json tools/custom.json
       "options": [
         { "value": "friendly", "zh": "友好", "en": "Friendly" }
       ],
-      "promptTemplate": "Write an email reply in a {{option}} tone.\n\nMaterial:\n{{input}}"
+      "variables": [
+        {
+          "name": "audience",
+          "label": { "zh": "收件人", "en": "Audience" },
+          "placeholder": { "zh": "例如：客户", "en": "Example: customer" },
+          "default": "customer",
+          "required": true
+        },
+        {
+          "name": "goal",
+          "label": { "zh": "回复目标", "en": "Reply goal" },
+          "type": "textarea"
+        }
+      ],
+      "promptTemplate": "Write an email reply in a {{option}} tone for {{audience}}.\nReply goal: {{goal}}\n\nMaterial:\n{{input}}"
     }
   ]
 }
@@ -49,6 +63,26 @@ Supported template variables:
 
 - `{{input}}`: user input.
 - `{{option}}`: selected tool option.
+- `{{language}}`: selected output language.
+- Custom variables such as `{{audience}}` or `{{goal}}`.
+
+Custom variables can be declared with `variables`. The web app automatically renders fields for them, and the CLI accepts repeated `--var key=value` flags:
+
+```bash
+ai-tools --tool email-reply --input "Thanks for the update" --var audience=customer --var goal="confirm next step"
+```
+
+Variable fields support:
+
+- `name`: required. Use letters, numbers, `_`, or `-`; it must start with a letter or `_`.
+- `label`: bilingual label or plain string.
+- `placeholder`: bilingual placeholder or plain string.
+- `default`: optional default value.
+- `required`: set to `true` to block empty values.
+- `type`: `text`, `textarea`, or `select`.
+- `options`: required when `type` is `select`.
+
+If a prompt uses a custom placeholder that is not declared in `variables`, AI Tools Kit will infer a simple text field automatically.
 
 ## Custom Location
 

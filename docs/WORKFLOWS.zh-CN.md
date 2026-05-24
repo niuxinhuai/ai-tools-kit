@@ -22,6 +22,9 @@ ai-tools --workflow workflows/content-pipeline.json --file notes.md --out workfl
   "language": "zh",
   "provider": "mock",
   "fallbackProviders": "openai,ollama",
+  "variables": {
+    "audience": "developers"
+  },
   "steps": [
     {
       "name": "Summarize source material",
@@ -31,11 +34,16 @@ ai-tools --workflow workflows/content-pipeline.json --file notes.md --out workfl
     {
       "name": "Create social post",
       "toolId": "social-post",
-      "option": "twitter"
+      "option": "twitter",
+      "variables": {
+        "tone": "practical"
+      }
     }
   ]
 }
 ```
+
+顶层 `variables` 会传给每一步；步骤里的 `variables` 会覆盖当前步骤的同名变量。
 
 ## 长文本
 

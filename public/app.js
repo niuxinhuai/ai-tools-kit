@@ -118,6 +118,7 @@ const elements = {
   modelInput: document.querySelector("#modelInput"),
   apiTokenInput: document.querySelector("#apiTokenInput"),
   inputLabel: document.querySelector("#inputLabel"),
+  variableFields: document.querySelector("#variableFields"),
   inputText: document.querySelector("#inputText"),
   outputText: document.querySelector("#outputText"),
   runButton: document.querySelector("#runButton"),
@@ -288,6 +289,7 @@ function selectTool(toolId, shouldRenderList = true) {
   elements.toolTitle.textContent = tool.title[locale] || tool.title.en;
   elements.inputLabel.textContent = tool.inputLabel[locale] || tool.inputLabel.en;
   elements.inputText.placeholder = tool.placeholder[locale] || tool.placeholder.en;
+  renderVariableFields(tool);
   elements.optionSelect.innerHTML = tool.options
     .map((option) => `<option value="${option.value}">${escapeHtml(option[locale] || option.en)}</option>`)
     .join("");
@@ -315,6 +317,7 @@ async function runActiveTool() {
       input,
       option: elements.optionSelect.value,
       language: elements.languageSelect.value,
+      variables: collectVariables(),
       provider: {
         provider: elements.providerSelect.value,
         model: elements.modelInput.value.trim()
@@ -338,6 +341,7 @@ async function runActiveTool() {
       toolId: state.activeToolId,
       option: elements.optionSelect.value,
       input,
+      variables: collectVariables(),
       output: elements.outputText.textContent,
       provider: provider?.name || elements.providerSelect.value,
       createdAt: new Date().toISOString()
@@ -408,7 +412,8 @@ async function previewPrompt() {
         toolId: state.activeToolId,
         input,
         option: elements.optionSelect.value,
-        language: elements.languageSelect.value
+        language: elements.languageSelect.value,
+        variables: collectVariables()
       })
     });
     elements.outputText.textContent = result.prompt;
@@ -441,6 +446,7 @@ function exportOutput(format) {
       name: elements.providerSelect.value,
       model: elements.modelInput.value.trim()
     },
+    variables: collectVariables(),
     input: elements.inputText.value,
     output,
     exportedAt: new Date().toISOString()
@@ -471,6 +477,7 @@ function formatExport(payload, format) {
     `- Option: ${payload.option}`,
     `- Language: ${payload.language}`,
     `- Exported at: ${payload.exportedAt}`,
+    ...formatVariableLines(payload.variables),
     "",
     "## Input",
     "",
@@ -558,6 +565,7 @@ function findHistoryItem(id) {
 function restoreHistory(item) {
   selectTool(item.toolId);
   elements.optionSelect.value = item.option;
+  setVariableValues(item.variables);
   elements.inputText.value = item.input;
   elements.outputText.textContent = item.output;
   elements.runMeta.textContent = `${item.provider} / ${new Date(item.createdAt).toLocaleString()}`;
@@ -572,6 +580,7 @@ function downloadHistoryItem(item) {
     option: item.option,
     language: state.language,
     provider: { name: item.provider },
+    variables: item.variables || {},
     input: item.input,
     output: item.output,
     exportedAt: new Date().toISOString()
@@ -604,6 +613,67 @@ function historyId() {
 
 function updateCharCount() {
   elements.charCount.textContent = t("chars", elements.inputText.value.length);
+}
+
+function renderVariableFields(tool) {
+  const variables = tool.variables || [];
+  if (!variables.length) {
+    elements.variableFields.hidden = true;
+    elements.variableFields.innerHTML = "";
+    return;
+  }
+  elements.variableFields.hidden = false;
+  elements.variableFields.innerHTML = variables.map((variable) => {
+    const label = variable.label?.[state.locale] || variable.label?.en || variable.name;
+    const placeholder = variable.placeholder?.[state.locale] || variable.placeholder?.en || "";
+    const value = variable.default || "";
+    const required = variable.required ? "required" : "";
+    const wide = variable.type === "textarea" ? " variable-wide" : "";
+    if (variable.type === "select") {
+      const options = (variable.options || []).map((option) => {
+        const optionLabel = option[state.locale] || option.en || option.value;
+        return `<option value="${escapeHtml(option.value)}" ${option.value === value ? "selected" : ""}>${escapeHtml(optionLabel)}</option>`;
+      }).join("");
+      return `<label class="${wide}">
+        <span>${escapeHtml(label)}</span>
+        <select data-variable-name="${escapeHtml(variable.name)}" ${required}>${options}</select>
+      </label>`;
+    }
+    if (variable.type === "textarea") {
+      return `<label class="${wide}">
+        <span>${escapeHtml(label)}</span>
+        <textarea data-variable-name="${escapeHtml(variable.name)}" placeholder="${escapeHtml(placeholder)}" ${required}>${escapeHtml(value)}</textarea>
+      </label>`;
+    }
+    return `<label class="${wide}">
+      <span>${escapeHtml(label)}</span>
+      <input data-variable-name="${escapeHtml(variable.name)}" type="text" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" ${required} />
+    </label>`;
+  }).join("");
+}
+
+function collectVariables() {
+  const fields = elements.variableFields.querySelectorAll("[data-variable-name]");
+  return Object.fromEntries([...fields].map((field) => [field.dataset.variableName, field.value]));
+}
+
+function setVariableValues(variables = {}) {
+  elements.variableFields.querySelectorAll("[data-variable-name]").forEach((field) => {
+    if (variables[field.dataset.variableName] !== undefined) {
+      field.value = variables[field.dataset.variableName];
+    }
+  });
+}
+
+function formatVariableLines(variables = {}) {
+  const entries = Object.entries(variables).filter(([, value]) => String(value || "").trim());
+  if (!entries.length) {
+    return [];
+  }
+  return [
+    "- Variables:",
+    ...entries.map(([key, value]) => `  - ${key}: ${value}`)
+  ];
 }
 
 async function fetchJson(url, options) {
