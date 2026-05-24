@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 export const languages = {
   zh: {
     label: "中文",
@@ -13,7 +16,7 @@ export const languages = {
   }
 };
 
-export const tools = [
+const builtInTools = [
   {
     id: "rewrite",
     icon: "pen",
@@ -185,6 +188,8 @@ export const tools = [
   }
 ];
 
+export const tools = [...builtInTools, ...loadCustomTools()];
+
 export function getTool(id) {
   return tools.find((tool) => tool.id === id);
 }
@@ -202,4 +207,57 @@ export function buildToolPrompt({ toolId, input, option, language = "zh" }) {
     "",
     tool.buildPrompt({ input, option: option || tool.options[0].value })
   ].join("\n");
+}
+
+function loadCustomTools() {
+  const filePath = process.env.AI_TOOLS_CUSTOM_FILE || path.resolve(process.cwd(), "tools/custom.json");
+  if (!fs.existsSync(filePath)) {
+    return [];
+  }
+
+  const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const items = Array.isArray(parsed) ? parsed : parsed.tools;
+  if (!Array.isArray(items)) {
+    throw new Error(`Custom tools file must contain an array or {"tools": []}: ${filePath}`);
+  }
+
+  return items.map((item) => normalizeCustomTool(item, filePath));
+}
+
+function normalizeCustomTool(item, filePath) {
+  const required = ["id", "title", "description", "inputLabel", "placeholder", "promptTemplate"];
+  for (const key of required) {
+    if (!item[key]) {
+      throw new Error(`Custom tool in ${filePath} is missing "${key}".`);
+    }
+  }
+  const options = Array.isArray(item.options) && item.options.length
+    ? item.options
+    : [{ value: "default", zh: "默认", en: "Default" }];
+  const promptTemplate = String(item.promptTemplate);
+
+  return {
+    id: String(item.id),
+    icon: item.icon || "sparkles",
+    category: item.category || "Custom",
+    title: normalizeLocaleText(item.title),
+    description: normalizeLocaleText(item.description),
+    inputLabel: normalizeLocaleText(item.inputLabel),
+    placeholder: normalizeLocaleText(item.placeholder),
+    options,
+    custom: true,
+    buildPrompt: ({ input, option }) => promptTemplate
+      .replaceAll("{{input}}", input)
+      .replaceAll("{{option}}", option || options[0].value)
+  };
+}
+
+function normalizeLocaleText(value) {
+  if (typeof value === "string") {
+    return { zh: value, en: value };
+  }
+  return {
+    zh: value.zh || value.en || "",
+    en: value.en || value.zh || ""
+  };
 }

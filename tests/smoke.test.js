@@ -1,4 +1,8 @@
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { expandFilePatterns, formatResult } from "../src/files.js";
 import { runTool, streamTool } from "../src/run.js";
 import { tools } from "../src/tools.js";
 import { listProviders } from "../src/providers.js";
@@ -31,5 +35,12 @@ for await (const event of streamTool({
 assert.equal(chunks[0].type, "meta");
 assert.ok(chunks.some((event) => event.type === "chunk"), "expected streamed chunks");
 assert.equal(chunks.at(-1).type, "done");
+
+const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "ai-tools-kit-"));
+await fs.writeFile(path.join(tempDir, "one.md"), "one", "utf8");
+await fs.writeFile(path.join(tempDir, "two.txt"), "two", "utf8");
+const matched = await expandFilePatterns([path.join(tempDir, "*.md")]);
+assert.equal(matched.length, 1);
+assert.match(formatResult(result, "md"), /# summarize/);
 
 console.log("Smoke tests passed.");

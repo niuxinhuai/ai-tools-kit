@@ -213,7 +213,8 @@ input:focus {
 #copyButton,
 #sampleButton,
 #fileButton,
-#clearHistoryButton {
+#clearHistoryButton,
+.export-button {
   height: 34px;
   padding: 0 12px;
   border: 1px solid var(--line);
@@ -232,6 +233,34 @@ input:focus {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.80);
   box-shadow: var(--shadow);
+}
+
+.provider-notice {
+  display: none;
+  margin: -4px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.provider-notice.show {
+  display: block;
+}
+
+.provider-notice.warning {
+  border-color: rgba(138, 75, 15, 0.28);
+  background: #fff7ed;
+  color: var(--warning);
+}
+
+.provider-notice.error {
+  border-color: rgba(185, 28, 28, 0.28);
+  background: #fff1f2;
+  color: #9f1239;
 }
 
 .config-panel label {

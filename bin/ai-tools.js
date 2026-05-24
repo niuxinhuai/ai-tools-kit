@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
+import path from "node:path";
 import process from "node:process";
 import { loadEnv } from "../src/env.js";
+import { expandFilePatterns, formatResult, outputFileName } from "../src/files.js";
 import { runTool } from "../src/run.js";
 import { tools } from "../src/tools.js";
-import { listProviders } from "../src/providers.js";
+import { diagnoseProvider, listProviders } from "../src/providers.js";
 
 loadEnv();
 const args = parseArgs(process.argv.slice(2));
@@ -24,7 +26,23 @@ if (args.providers) {
   process.exit(0);
 }
 
+if (args.doctor) {
+  const status = diagnoseProvider({
+    provider: args.provider,
+    model: args.model,
+    baseUrl: args.baseUrl,
+    apiKey: args.apiKey
+  });
+  console.log(JSON.stringify(status, null, 2));
+  process.exit(status.ok || status.level === "warning" ? 0 : 1);
+}
+
 try {
+  if (args.files) {
+    await runBatch(args);
+    process.exit(0);
+  }
+
   const input = await resolveInput(args);
   const result = await runTool({
     toolId: args.tool || "rewrite",
@@ -48,6 +66,51 @@ try {
 } catch (error) {
   console.error(`Error: ${error.message}`);
   process.exit(1);
+}
+
+async function runBatch(options) {
+  const patterns = flattenValues(options.files);
+  const files = await expandFilePatterns(patterns);
+  if (!files.length) {
+    throw new Error(`No files matched: ${patterns.join(", ")}`);
+  }
+
+  const format = options.format || (options.json ? "json" : "md");
+  const results = [];
+  if (options.out) {
+    await fs.mkdir(options.out, { recursive: true });
+  }
+
+  for (const file of files) {
+    const input = await fs.readFile(file, "utf8");
+    const result = await runTool({
+      toolId: options.tool || "summarize",
+      input,
+      option: options.option,
+      language: options.lang || options.language || "zh",
+      provider: {
+        provider: options.provider,
+        model: options.model,
+        baseUrl: options.baseUrl,
+        apiKey: options.apiKey
+      },
+      temperature: options.temperature
+    });
+    results.push({ file, ...result });
+
+    if (options.out) {
+      const extension = format === "json" ? "json" : format === "txt" ? "txt" : "md";
+      const outputPath = path.join(options.out, outputFileName(file, extension));
+      await fs.writeFile(outputPath, formatResult({ file, ...result }, format), "utf8");
+      console.error(`Wrote ${outputPath}`);
+    } else {
+      console.log(formatResult({ file, ...result }, format));
+    }
+  }
+
+  if (options.out && options.json) {
+    console.log(JSON.stringify(results, null, 2));
+  }
 }
 
 async function resolveInput(options) {
@@ -81,12 +144,23 @@ function parseArgs(argv) {
       if (!next || next.startsWith("--")) {
         result[key] = true;
       } else {
-        result[key] = next;
+        if (result[key] === undefined) {
+          result[key] = next;
+        } else if (Array.isArray(result[key])) {
+          result[key].push(next);
+        } else {
+          result[key] = [result[key], next];
+        }
         index += 1;
       }
     }
   }
   return result;
+}
+
+function flattenValues(value) {
+  const values = Array.isArray(value) ? value : [value];
+  return values.flatMap((item) => String(item).split(",")).map((item) => item.trim()).filter(Boolean);
 }
 
 function printHelp() {
@@ -95,21 +169,27 @@ function printHelp() {
 Usage:
   ai-tools --list
   ai-tools --providers
+  ai-tools --doctor --provider deepseek
   ai-tools --tool rewrite --input "Make this better" --lang en
   cat notes.md | ai-tools --tool summarize --option structured --lang zh
   ai-tools --tool code-explain --file ./snippet.js --provider ollama --model llama3.1
+  ai-tools --tool summarize --files "docs/*.md" --out summaries --format md
 
 Options:
   --tool <id>          Tool id. Defaults to rewrite.
   --option <value>     Tool mode. Defaults to the tool's first option.
   --input <text>       Inline input.
   --file <path>        Read input from file.
+  --files <patterns>   Batch mode. Supports comma-separated patterns and simple * / ** globs.
+  --out <dir>          Write batch results to a directory.
+  --format <md|txt|json>
   --lang <zh|en|bilingual>
   --provider <name>    openai, deepseek, qwen, doubao, moonshot, gemini, anthropic, ollama, mock.
   --model <name>       Override model.
   --base-url <url>     Override provider base URL.
   --api-key <key>      Override provider API key.
   --temperature <num>  Defaults to 0.4.
+  --doctor             Print provider configuration diagnostics.
   --json               Print full JSON result.
 `);
 }

@@ -11,7 +11,10 @@ A practical bilingual AI toolbox that works as both a web app and a CLI. It is d
 - Shared tool definitions for web and CLI.
 - Provider support for OpenAI, OpenAI-compatible APIs, DeepSeek, Qwen, Doubao, Moonshot, Gemini, Anthropic, Ollama, and local mock mode.
 - Streaming output in the web app for OpenAI-compatible providers and Ollama.
-- Text file import and local browser history for recent runs.
+- Text file import, result export, and local browser history for recent runs.
+- Batch CLI processing for multiple files.
+- Custom tools through `tools/custom.json`.
+- Provider diagnostics through the web app and `ai-tools --doctor`.
 - No build step required.
 
 ## Quick Start
@@ -37,6 +40,8 @@ AI_PROVIDER=mock
 npm run cli -- --list
 npm run cli -- --tool rewrite --input "Make this sentence better." --lang en --provider mock
 cat notes.md | npm run cli -- --tool summarize --option structured --lang zh
+npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
+npm run cli -- --doctor --provider deepseek
 ```
 
 If installed globally or linked locally:
@@ -89,6 +94,16 @@ Docker quick start:
 ```bash
 cp .env.example .env
 docker compose up --build
+```
+
+## Custom Tools
+
+See [docs/CUSTOM_TOOLS.md](./docs/CUSTOM_TOOLS.md).
+
+```bash
+mkdir -p tools
+cp tools/custom.example.json tools/custom.json
+npm start
 ```
 
 ## Project Structure

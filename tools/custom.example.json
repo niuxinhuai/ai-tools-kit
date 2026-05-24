@@ -1,0 +1,30 @@
+{
+  "tools": [
+    {
+      "id": "email-reply",
+      "icon": "pen",
+      "category": "Custom",
+      "title": {
+        "zh": "邮件回复助手",
+        "en": "Email Reply Assistant"
+      },
+      "description": {
+        "zh": "根据原邮件和你的要点生成礼貌、清晰的回复。",
+        "en": "Draft a polite, clear reply from the original email and your notes."
+      },
+      "inputLabel": {
+        "zh": "原邮件和回复要点",
+        "en": "Original email and reply notes"
+      },
+      "placeholder": {
+        "zh": "粘贴原邮件，再写下你想表达的要点...",
+        "en": "Paste the original email, then add your reply notes..."
+      },
+      "options": [
+        { "value": "friendly", "zh": "友好", "en": "Friendly" },
+        { "value": "formal", "zh": "正式", "en": "Formal" }
+      ],
+      "promptTemplate": "Write an email reply in a {{option}} tone. Preserve the user's intent, keep it concise, and return only the email body.\n\nMaterial:\n{{input}}"
+    }
+  ]
+}

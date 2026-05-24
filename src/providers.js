@@ -65,6 +65,52 @@ export function listProviders() {
   return Object.keys(providerDefaults);
 }
 
+export function diagnoseProvider(overrides = {}) {
+  const requestedName = normalizeProvider(overrides.provider || process.env.AI_PROVIDER || "mock");
+  const defaults = providerDefaults[requestedName];
+  if (!defaults) {
+    return {
+      ok: false,
+      level: "error",
+      provider: requestedName,
+      model: "",
+      baseUrl: "",
+      hasApiKey: false,
+      issues: [`Unknown provider "${requestedName}". Use one of: ${listProviders().join(", ")}.`]
+    };
+  }
+
+  const resolved = resolveProvider(overrides);
+  const issues = [];
+  const warnings = [];
+
+  if (resolved.type !== "mock" && resolved.type !== "ollama" && !resolved.apiKey) {
+    issues.push(`Missing API key. Set ${defaults.keyEnv} or AI_API_KEY.`);
+  }
+  if (resolved.type === "openai-compatible" && !resolved.baseUrl) {
+    issues.push(`Missing base URL. Set ${requestedName.toUpperCase().replaceAll("-", "_")}_BASE_URL or AI_BASE_URL.`);
+  }
+  if (!resolved.model) {
+    issues.push("Missing model. Set AI_MODEL or a provider-specific model variable.");
+  }
+  if (resolved.type === "mock") {
+    warnings.push("Mock mode is active. It is useful for local tests but does not call a real model.");
+  }
+
+  return {
+    ok: issues.length === 0,
+    level: issues.length ? "error" : warnings.length ? "warning" : "ok",
+    provider: resolved.name,
+    type: resolved.type,
+    model: resolved.model,
+    baseUrl: resolved.baseUrl,
+    hasApiKey: Boolean(resolved.apiKey),
+    keyEnv: defaults.keyEnv || "",
+    issues,
+    warnings
+  };
+}
+
 export function resolveProvider(overrides = {}) {
   const name = normalizeProvider(overrides.provider || process.env.AI_PROVIDER || "mock");
   const defaults = providerDefaults[name] ?? providerDefaults.mock;

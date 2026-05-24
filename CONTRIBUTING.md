@@ -13,10 +13,11 @@ Use `AI_PROVIDER=mock` when you want to test without an API key.
 
 ## Add a Tool
 
-1. Add a tool definition in `src/tools.js`.
-2. Make sure it has Chinese and English title, description, input label, placeholder, and options.
-3. Add a sample in `public/app.js`.
-4. Run `npm test` and `npm run check`.
+1. For local/private tools, prefer `tools/custom.json`.
+2. For built-in tools, add a tool definition in `src/tools.js`.
+3. Make sure it has Chinese and English title, description, input label, placeholder, and options.
+4. Add a sample in `public/app.js`.
+5. Run `npm test` and `npm run check`.
 
 ## Add a Provider
 

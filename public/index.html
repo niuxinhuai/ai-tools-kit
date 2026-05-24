@@ -55,6 +55,8 @@
           </label>
         </section>
 
+        <div id="providerNotice" class="provider-notice" role="status"></div>
+
         <section class="editor-grid">
           <div class="panel input-panel">
             <div class="panel-head">
@@ -75,9 +77,16 @@
           <div class="panel output-panel">
             <div class="panel-head">
               <span data-i18n="output">Output</span>
-              <span id="runMeta">Ready</span>
+              <div class="panel-tools">
+                <button class="export-button" type="button" data-export="md">MD</button>
+                <button class="export-button" type="button" data-export="txt">TXT</button>
+                <button class="export-button" type="button" data-export="json">JSON</button>
+              </div>
             </div>
             <pre id="outputText">Choose a tool, paste your input, then run it.</pre>
+            <div class="actions">
+              <span id="runMeta">Ready</span>
+            </div>
           </div>
         </section>
 

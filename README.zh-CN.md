@@ -11,7 +11,10 @@ English docs: [README.md](./README.md).
 - Web 和 CLI 共用同一套工具定义。
 - 支持 OpenAI、OpenAI 兼容接口、DeepSeek、通义千问、豆包、Moonshot、Gemini、Anthropic、Ollama 和本地 Mock 模式。
 - 网页端支持 OpenAI 兼容接口和 Ollama 的流式输出。
-- 支持文本文件导入和浏览器本地历史记录。
+- 支持文本文件导入、结果导出和浏览器本地历史记录。
+- CLI 支持多文件批量处理。
+- 支持通过 `tools/custom.json` 增加自定义工具。
+- 支持网页端和 `ai-tools --doctor` Provider 配置诊断。
 - 零运行依赖，不需要构建步骤。
 
 ## 快速开始
@@ -37,6 +40,8 @@ AI_PROVIDER=mock
 npm run cli -- --list
 npm run cli -- --tool rewrite --input "帮我把这句话改自然一点。" --lang zh --provider mock
 cat notes.md | npm run cli -- --tool summarize --option structured --lang zh
+npm run cli -- --tool summarize --files "docs/*.md" --out summaries --format md
+npm run cli -- --doctor --provider deepseek
 ```
 
 如果全局安装或本地 link：
@@ -89,6 +94,16 @@ Docker 快速启动：
 ```bash
 cp .env.example .env
 docker compose up --build
+```
+
+## 自定义工具
+
+见 [docs/CUSTOM_TOOLS.zh-CN.md](./docs/CUSTOM_TOOLS.zh-CN.md)。
+
+```bash
+mkdir -p tools
+cp tools/custom.example.json tools/custom.json
+npm start
 ```
 
 ## 项目结构

@@ -11,7 +11,7 @@
     "dev": "node server/index.js",
     "cli": "node bin/ai-tools.js",
     "test": "node tests/smoke.test.js",
-    "check": "node --check server/index.js && node --check bin/ai-tools.js && node --check src/env.js && node --check src/providers.js && node --check src/run.js && node --check src/tools.js && node --check public/app.js"
+    "check": "node --check server/index.js && node --check bin/ai-tools.js && node --check src/env.js && node --check src/files.js && node --check src/providers.js && node --check src/run.js && node --check src/tools.js && node --check public/app.js"
   },
   "keywords": [
     "ai",

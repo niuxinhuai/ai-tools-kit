@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { loadEnv } from "../src/env.js";
 import { runTool, streamTool } from "../src/run.js";
 import { languages, tools } from "../src/tools.js";
-import { listProviders, resolveProvider } from "../src/providers.js";
+import { diagnoseProvider, listProviders, resolveProvider } from "../src/providers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -28,7 +28,8 @@ const server = http.createServer(async (request, response) => {
         tools,
         languages,
         providers: listProviders(),
-        activeProvider: publicProviderInfo()
+        activeProvider: publicProviderInfo(),
+        providerStatus: diagnoseProvider()
       });
     }
 

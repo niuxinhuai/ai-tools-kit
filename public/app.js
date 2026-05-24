@@ -6,6 +6,7 @@ const state = {
   language: localStorage.getItem("ai-tools-language") || "zh",
   locale: "zh",
   activeMeta: null,
+  providerStatus: null,
   history: loadHistory()
 };
 
@@ -35,7 +36,9 @@ const ui = {
     emptyHistory: "还没有历史记录。",
     chars: (count) => `${count} 字符`,
     imported: (name) => `已导入 ${name}`,
-    fileTooLarge: "文件太大，请选择 1MB 以内的文本文件。"
+    fileTooLarge: "文件太大，请选择 1MB 以内的文本文件。",
+    exportEmpty: "当前没有可导出的结果。",
+    exported: (format) => `已导出 ${format.toUpperCase()}`
   },
   en: {
     tagline: "Web + CLI bilingual AI tools",
@@ -62,7 +65,9 @@ const ui = {
     emptyHistory: "No history yet.",
     chars: (count) => `${count} chars`,
     imported: (name) => `Imported ${name}`,
-    fileTooLarge: "File is too large. Please choose a text file under 1MB."
+    fileTooLarge: "File is too large. Please choose a text file under 1MB.",
+    exportEmpty: "There is no result to export yet.",
+    exported: (format) => `Exported ${format.toUpperCase()}`
   }
 };
 
@@ -97,6 +102,7 @@ const elements = {
   languageSelect: document.querySelector("#languageSelect"),
   optionSelect: document.querySelector("#optionSelect"),
   providerSelect: document.querySelector("#providerSelect"),
+  providerNotice: document.querySelector("#providerNotice"),
   modelInput: document.querySelector("#modelInput"),
   inputLabel: document.querySelector("#inputLabel"),
   inputText: document.querySelector("#inputText"),
@@ -109,7 +115,8 @@ const elements = {
   charCount: document.querySelector("#charCount"),
   runMeta: document.querySelector("#runMeta"),
   clearHistoryButton: document.querySelector("#clearHistoryButton"),
-  historyList: document.querySelector("#historyList")
+  historyList: document.querySelector("#historyList"),
+  exportButtons: document.querySelectorAll("[data-export]")
 };
 
 init();
@@ -119,6 +126,7 @@ async function init() {
   state.tools = meta.tools;
   state.languages = meta.languages;
   state.providers = meta.providers;
+  state.providerStatus = meta.providerStatus;
   state.locale = state.language === "en" ? "en" : "zh";
   elements.providerBadge.textContent = `${meta.activeProvider.name} / ${meta.activeProvider.model}`;
   renderControls();
@@ -153,6 +161,9 @@ function bindEvents() {
     saveHistory();
     renderHistory();
   });
+  elements.exportButtons.forEach((button) => {
+    button.addEventListener("click", () => exportOutput(button.dataset.export));
+  });
   elements.copyButton.addEventListener("click", async () => {
     await navigator.clipboard.writeText(elements.outputText.textContent);
     elements.copyButton.textContent = t("copied");
@@ -181,6 +192,7 @@ function applyLocale() {
     elements.runMeta.textContent = t("ready");
   }
   updateCharCount();
+  renderProviderNotice();
 }
 
 function renderControls() {
@@ -191,6 +203,18 @@ function renderControls() {
   elements.providerSelect.innerHTML = state.providers
     .map((provider) => `<option value="${provider}">${provider}</option>`)
     .join("");
+}
+
+function renderProviderNotice() {
+  const status = state.providerStatus;
+  if (!status || status.level === "ok") {
+    elements.providerNotice.className = "provider-notice";
+    elements.providerNotice.textContent = "";
+    return;
+  }
+  const details = [...(status.issues || []), ...(status.warnings || [])].join(" ");
+  elements.providerNotice.className = `provider-notice show ${status.level}`;
+  elements.providerNotice.textContent = `${status.provider} / ${status.model}: ${details}`;
 }
 
 function renderToolList() {
@@ -341,6 +365,74 @@ function addHistory(item) {
   state.history = [item, ...state.history].slice(0, 12);
   saveHistory();
   renderHistory();
+}
+
+function exportOutput(format) {
+  const output = elements.outputText.textContent.trim();
+  if (!output || output === t("emptyOutput") || output === t("emptyInput")) {
+    elements.runMeta.textContent = t("exportEmpty");
+    return;
+  }
+  const tool = state.tools.find((item) => item.id === state.activeToolId);
+  const payload = {
+    toolId: state.activeToolId,
+    tool: tool?.title[state.locale] || state.activeToolId,
+    option: elements.optionSelect.value,
+    language: elements.languageSelect.value,
+    provider: state.activeMeta?.provider || {
+      name: elements.providerSelect.value,
+      model: elements.modelInput.value.trim()
+    },
+    input: elements.inputText.value,
+    output,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([formatExport(payload, format)], { type: exportMime(format) });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `${payload.toolId}-${Date.now()}.${format}`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+  elements.runMeta.textContent = t("exported", format);
+}
+
+function formatExport(payload, format) {
+  if (format === "json") {
+    return `${JSON.stringify(payload, null, 2)}\n`;
+  }
+  if (format === "txt") {
+    return `${payload.output}\n`;
+  }
+  return [
+    `# ${payload.tool}`,
+    "",
+    `- Tool ID: ${payload.toolId}`,
+    `- Provider: ${payload.provider.name || ""}`,
+    `- Model: ${payload.provider.model || ""}`,
+    `- Option: ${payload.option}`,
+    `- Language: ${payload.language}`,
+    `- Exported at: ${payload.exportedAt}`,
+    "",
+    "## Input",
+    "",
+    payload.input,
+    "",
+    "## Output",
+    "",
+    payload.output,
+    ""
+  ].join("\n");
+}
+
+function exportMime(format) {
+  if (format === "json") {
+    return "application/json";
+  }
+  if (format === "txt") {
+    return "text/plain";
+  }
+  return "text/markdown";
 }
 
 function renderHistory() {
